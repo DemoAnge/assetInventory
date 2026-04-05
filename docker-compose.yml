@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: inventario_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend-django/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+              --character-set-server=utf8mb4
+              --collation-server=utf8mb4_unicode_ci
+
+  django:
+    build: ./backend-django
+    container_name: inventario_django
+    restart: always
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-django:/app
+      - django_media:/app/media
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  node:
+    build: ./backend-node
+    container_name: inventario_node
+    restart: always
+    env_file: .env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend-node:/app
+      - /app/node_modules
+    depends_on:
+      - django
+
+  frontend:
+    build: ./frontend
+    container_name: inventario_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - django
+
+volumes:
+  mysql_data:
+  django_media:
