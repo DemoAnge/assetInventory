@@ -1,6 +1,6 @@
 import axiosClient from "./axiosClient";
-import type { AssetMovementType, MovementFormType } from "@/types/movement.types";
-import type { PaginatedResponseType } from "@/types/common.types";
+import type { AssetMovementType, MovementFormType } from "@/@types/movement.types";
+import type { PaginatedResponseType } from "@/@types/common.types";
 
 export const movementsApi = {
   getAll: (params?: Record<string, unknown>) =>

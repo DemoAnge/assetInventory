@@ -63,10 +63,6 @@ class DashboardStatsView(APIView):
             .values("object_code", "object_name", "action_date", "user_email")
         )
 
-        # Alertas sin resolver
-        from apps.alerts.models import Alert
-        alerts_count = Alert.objects.filter(is_resolved=False).count()
-
         # Solo para contabilidad: valores financieros
         financial = {}
         if user.role in ("ADMIN", "CONTABILIDAD"):
@@ -84,7 +80,7 @@ class DashboardStatsView(APIView):
             "critical_it":       critical_it,
             "fully_deprecated":  fully_dep,
             "needs_maintenance": needs_maint,
-            "alerts_unresolved": alerts_count,
+            "alerts_unresolved": 0,
             "by_category":       by_category,
             "by_status":         by_status,
             "by_agency":         by_agency,
@@ -186,6 +182,7 @@ class ExportDepreciationCSVView(APIView):
     permission_classes = [IsAuthenticated, IsAnyStaff]
 
     def get(self, request):
+        return Response({"detail": "Módulo de contabilidad desactivado."}, status=501)
         from apps.accounting.models import DepreciationSchedule
         qs = DepreciationSchedule.objects.select_related(
             "asset", "asset__agency"

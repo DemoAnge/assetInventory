@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Package, QrCode, ArrowLeftRight, Trash2, ChevronLeft, Wrench } from "lucide-react";
+import { Package, QrCode, ArrowLeftRight, Trash2, Wrench } from "lucide-react";
 import { useAsset, useAssetQr, useDeactivateAsset } from "@/hooks/useAssets";
 import { useAuthStore } from "@/store/authStore";
+import { AssetFormModal } from "./AssetFormModal";
+import { ComponentsPanel } from "./ComponentsPanel";
 import toast from "react-hot-toast";
 
 export default function AssetDetailPage() {
@@ -13,6 +15,7 @@ export default function AssetDetailPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [showDeactivate, setShowDeactivate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState("");
   const deactivate = useDeactivateAsset(assetId);
 
@@ -50,12 +53,12 @@ export default function AssetDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{asset.name}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{asset.brand} {asset.model_name} — {asset.category_display}</p>
+          <p className="text-gray-500 text-sm mt-0.5">{asset.brand_name} {asset.model_name} — {asset.category_display}</p>
         </div>
         <div className="flex gap-2">
           {canWrite && (
             <>
-              <Link to={`/assets/${asset.id}/edit`} className="btn-secondary text-sm">Editar</Link>
+              <button onClick={() => setShowEdit(true)} className="btn-secondary text-sm">Editar</button>
               <Link to={`/movements/new?asset=${asset.id}`} className="btn-secondary text-sm flex items-center gap-1">
                 <ArrowLeftRight size={14} /> Trasladar
               </Link>
@@ -82,7 +85,7 @@ export default function AssetDetailPage() {
                 ["N° de Serie", asset.serial_number ?? "—"],
                 ["Estado", asset.status_display],
                 ["Categoría", asset.category_display],
-                ["Marca / Modelo", `${asset.brand} ${asset.model_name}`.trim() || "—"],
+                ["Marca / Modelo", `${asset.brand_name ?? ""} ${asset.model_name ?? ""}`.trim() || "—"],
                 ["Color", asset.color || "—"],
                 ["Proveedor", asset.supplier || "—"],
                 ["N° Factura", asset.invoice_number || "—"],
@@ -152,39 +155,7 @@ export default function AssetDetailPage() {
           )}
 
           {/* Componentes */}
-          {asset.components_count > 0 && (
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Package size={18} /> Componentes ({asset.components_count})
-                </h2>
-                {canWrite && (
-                  <Link to={`/assets/${asset.id}/components/new`} className="btn-secondary text-xs">
-                    + Agregar componente
-                  </Link>
-                )}
-              </div>
-              <div className="space-y-2">
-                {asset.components.map((comp) => (
-                  <div key={comp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <span className="font-mono text-primary-600 text-sm font-medium">{comp.asset_code}</span>
-                      <span className="mx-2 text-gray-400">—</span>
-                      <span className="text-gray-700 text-sm">{comp.name}</span>
-                      {comp.component_type_display && (
-                        <span className="ml-2 text-xs text-gray-500">({comp.component_type_display})</span>
-                      )}
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      comp.status === "ACTIVO" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                    }`}>
-                      {comp.status_display}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <ComponentsPanel asset={asset} canWrite={canWrite} />
         </div>
 
         {/* Panel lateral — QR */}
@@ -237,6 +208,11 @@ export default function AssetDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal edición */}
+      {showEdit && (
+        <AssetFormModal asset={asset} onClose={() => setShowEdit(false)} />
+      )}
 
       {/* Modal baja */}
       {showDeactivate && (

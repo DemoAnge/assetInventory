@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftRight, Plus, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { movementsApi } from "@/api/movementsApi";
-import type { MovementFormType, MovementType } from "@/types/movement.types";
+import type { MovementFormType, MovementType } from "@/@types/movement.types";
 
 type Tab = "list" | "new";
 

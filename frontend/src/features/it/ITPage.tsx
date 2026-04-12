@@ -1,236 +1,70 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Shield, AlertTriangle, Key, X } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { format } from "date-fns";
-import { itApi, type ITAssetProfile, type SoftwareLicense, type ITAssetProfileFormData, type SoftwareLicenseFormData } from "@/api/itApi";
+import { Plus, Shield, AlertTriangle, Key, Monitor, ChevronLeft, Search, Package } from "lucide-react";
+import { itApi, type ITAssetProfile, type SoftwareLicense } from "@/api/itApi";
+import { assetsApi } from "@/api/assetsApi";
+import ITAssetFormModal from "./ITAssetFormModal";
+import { ITProfileForm } from "./components/ITProfileForm";
+import { LicenseForm } from "./components/LicenseForm";
+import { RISK_STYLES, LICENSE_TYPE_LABELS } from "./components/itConstants";
 import toast from "react-hot-toast";
-
-const RISK_STYLES: Record<string, string> = {
-  CRITICO: "bg-red-100 text-red-700",
-  ALTO:    "bg-orange-100 text-orange-700",
-  MEDIO:   "bg-yellow-100 text-yellow-700",
-  BAJO:    "bg-green-100 text-green-700",
-};
-
-const LICENSE_TYPE_LABELS: Record<string, string> = {
-  PERPETUA:    "Perpetua",
-  SUSCRIPCION: "Suscripción",
-  OEM:         "OEM",
-  OPEN_SOURCE: "Open Source",
-  VOLUMEN:     "Por volumen",
-};
-
-// ── IT Profile Form ────────────────────────────────────────────────────────────
-function ITProfileForm({ profile, onClose }: { profile?: ITAssetProfile; onClose: () => void }) {
-  const qc = useQueryClient();
-  const { register, handleSubmit, formState: { errors } } = useForm<ITAssetProfileFormData>({
-    defaultValues: profile ?? { risk_level: "BAJO" },
-  });
-
-  const mutation = useMutation({
-    mutationFn: (data: ITAssetProfileFormData) =>
-      profile ? itApi.updateProfile(profile.id, data) : itApi.createProfile(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["it-profiles"] });
-      toast.success(profile ? "Perfil actualizado" : "Perfil TI creado");
-      onClose();
-    },
-    onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Error al guardar"),
-  });
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{profile ? "Editar perfil TI" : "Nuevo perfil TI"}</h2>
-          <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
-        </div>
-        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID del activo *</label>
-              <input type="number" className="input w-full" {...register("asset", { required: true, valueAsNumber: true })} />
-              {errors.asset && <p className="text-red-500 text-xs mt-1">Requerido</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nivel de riesgo *</label>
-              <select className="input w-full" {...register("risk_level", { required: true })}>
-                <option value="BAJO">Bajo</option>
-                <option value="MEDIO">Medio</option>
-                <option value="ALTO">Alto</option>
-                <option value="CRITICO">Crítico</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
-              <input className="input w-full" {...register("hostname")} placeholder="PC-ADMIN-01" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dirección IP</label>
-              <input className="input w-full" {...register("ip_address")} placeholder="192.168.1.100" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">MAC Address</label>
-              <input className="input w-full" {...register("mac_address")} placeholder="AA:BB:CC:DD:EE:FF" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sistema operativo</label>
-              <input className="input w-full" {...register("os_name")} placeholder="Windows 11" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Versión SO</label>
-              <input className="input w-full" {...register("os_version")} placeholder="23H2" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Procesador</label>
-              <input className="input w-full" {...register("processor")} placeholder="Intel Core i7-12700" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">RAM (GB)</label>
-              <input type="number" className="input w-full" {...register("ram_gb", { valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Almacenamiento (GB)</label>
-              <input type="number" className="input w-full" {...register("storage_gb", { valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Antivirus</label>
-              <input className="input w-full" {...register("antivirus")} placeholder="Windows Defender" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Último escaneo</label>
-              <input type="date" className="input w-full" {...register("last_scan_date")} />
-            </div>
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="is_server" className="rounded" {...register("is_server")} />
-              <label htmlFor="is_server" className="text-sm text-gray-700">Es servidor</label>
-            </div>
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="is_network_device" className="rounded" {...register("is_network_device")} />
-              <label htmlFor="is_network_device" className="text-sm text-gray-700">Es dispositivo de red</label>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas TI</label>
-            <textarea className="input w-full h-20 resize-none" {...register("notes")} />
-          </div>
-          <div className="flex gap-3 justify-end pt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ── License Form ───────────────────────────────────────────────────────────────
-function LicenseForm({ license, onClose }: { license?: SoftwareLicense; onClose: () => void }) {
-  const qc = useQueryClient();
-  const { register, handleSubmit, formState: { errors } } = useForm<SoftwareLicenseFormData>({
-    defaultValues: license ? {
-      software_name: license.software_name,
-      version: license.version,
-      license_type: license.license_type,
-      seats: license.seats,
-      used_seats: license.used_seats,
-      vendor: license.vendor,
-      purchase_date: license.purchase_date ?? "",
-      expiry_date: license.expiry_date ?? "",
-      cost: license.cost,
-      notes: license.notes,
-    } : { license_type: "PERPETUA", seats: 1, used_seats: 0 },
-  });
-
-  const mutation = useMutation({
-    mutationFn: (data: SoftwareLicenseFormData) =>
-      license ? itApi.updateLicense(license.id, data) : itApi.createLicense(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["it-licenses"] });
-      toast.success(license ? "Licencia actualizada" : "Licencia creada");
-      onClose();
-    },
-    onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Error al guardar"),
-  });
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl my-8 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{license ? "Editar licencia" : "Nueva licencia"}</h2>
-          <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
-        </div>
-        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Software *</label>
-              <input className="input w-full" {...register("software_name", { required: true })} placeholder="Microsoft Office 365" />
-              {errors.software_name && <p className="text-red-500 text-xs mt-1">Requerido</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
-              <input className="input w-full" {...register("version")} placeholder="2024" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-              <select className="input w-full" {...register("license_type", { required: true })}>
-                <option value="PERPETUA">Perpetua</option>
-                <option value="SUSCRIPCION">Suscripción</option>
-                <option value="OEM">OEM</option>
-                <option value="OPEN_SOURCE">Open Source</option>
-                <option value="VOLUMEN">Por volumen</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">N° licencias *</label>
-              <input type="number" className="input w-full" {...register("seats", { required: true, min: 1, valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">En uso</label>
-              <input type="number" className="input w-full" {...register("used_seats", { valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
-              <input className="input w-full" {...register("vendor")} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Costo ($)</label>
-              <input type="number" step="0.01" className="input w-full" {...register("cost")} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">F. compra</label>
-              <input type="date" className="input w-full" {...register("purchase_date")} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">F. vencimiento</label>
-              <input type="date" className="input w-full" {...register("expiry_date")} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Clave de licencia</label>
-            <input className="input w-full font-mono text-sm" {...register("license_key")} placeholder="XXXXX-XXXXX-XXXXX" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-            <textarea className="input w-full h-16 resize-none" {...register("notes")} />
-          </div>
-          <div className="flex gap-3 justify-end pt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function ITPage() {
+  // Vista principal: home → elige sección; it_assets → activos tecnológicos; profiles → perfiles/licencias
+  const [mainView, setMainView] = useState<"home" | "it_assets" | "profiles">("home");
+
+  // ── Estado de activos tecnológicos ──
+  const [itCategory, setItCategory] = useState<"COMPUTO" | "TELECOMUNICACION">("COMPUTO");
+  const [itSearch, setItSearch] = useState("");
+  const [itPage, setItPage] = useState(1);
+  const [showNewProfileModal, setShowNewProfileModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [editingProfileInAssets, setEditingProfileInAssets] = useState<ITAssetProfile | null>(null);
+  const [showProfileFormInAssets, setShowProfileFormInAssets] = useState(false);
+
+  async function openProfileFromAsset(profileId: number) {
+    try {
+      const res = await itApi.getProfileById(profileId);
+      setEditingProfileInAssets(res.data);
+      setShowProfileFormInAssets(true);
+    } catch {
+      toast.error("No se pudo cargar el perfil TI.");
+    }
+  }
+
+  const { data: itAssetsData, isLoading: itAssetsLoading } = useQuery({
+    queryKey: ["it-assets-list", itCategory, itSearch, itPage],
+    queryFn: () => assetsApi.getAll({ category: itCategory, search: itSearch || undefined, page: itPage }).then(r => r.data),
+    enabled: mainView === "it_assets",
+  });
+
+  const qcIt = useQueryClient();
+  const associateMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      for (const id of ids) {
+        await itApi.createProfile({ asset: id, risk_level: "BAJO" });
+      }
+    },
+    onSuccess: () => {
+      qcIt.invalidateQueries({ queryKey: ["it-assets-list"] });
+      qcIt.invalidateQueries({ queryKey: ["it-profiles"] });
+      setSelectedIds(new Set());
+      toast.success("Activos asociados al módulo TI. Puedes editar sus perfiles en 'Activos Existentes de TI'.");
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Error al asociar. Puede que ya tengan perfil."),
+  });
+
+  function toggleSelect(id: number, hasProfile: boolean) {
+    if (hasProfile) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  // ── Estado de perfiles TI ──
   const [tab, setTab] = useState<"profiles" | "licenses">("profiles");
   const [subTab, setSubTab] = useState<"all" | "critical" | "pending-scan" | "expiring" | "expired">("all");
   const [page, setPage] = useState(1);
@@ -294,12 +128,236 @@ export default function ITPage() {
     setPage(1);
   }
 
+  // ── Vista HOME ────────────────────────────────────────────────────────────────
+  if (mainView === "home") {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Módulo TI</h1>
+          <p className="text-gray-500 text-sm mt-1">Gestión de activos tecnológicos y perfiles TI</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Tarjeta 1 — Activos Tecnológicos */}
+          <button
+            onClick={() => setMainView("it_assets")}
+            className="card p-8 text-left hover:shadow-lg hover:border-blue-200 border border-transparent transition-all group"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
+                <Monitor size={28} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Activos Tecnológicos</h2>
+                <p className="text-gray-500 text-sm mt-1">
+                  Lista de todos los activos de categoría Cómputo y Telecomunicaciones registrados en el sistema.
+                </p>
+                <span className="inline-block mt-3 text-sm text-blue-600 font-medium group-hover:underline">
+                  Ver activos →
+                </span>
+              </div>
+            </div>
+          </button>
+
+          {/* Tarjeta 2 — Activos con perfil TI */}
+          <button
+            onClick={() => setMainView("profiles")}
+            className="card p-8 text-left hover:shadow-lg hover:border-green-200 border border-transparent transition-all group"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl group-hover:bg-green-100 transition-colors">
+                <Shield size={28} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Activos Existentes de TI</h2>
+                <p className="text-gray-500 text-sm mt-1">
+                  Activos con perfil TI ya configurado: hostname, IP, SO, RAM, nivel de riesgo y licencias.
+                </p>
+                <span className="inline-block mt-3 text-sm text-green-600 font-medium group-hover:underline">
+                  Ver perfiles TI →
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Vista ACTIVOS TECNOLÓGICOS ────────────────────────────────────────────────
+  if (mainView === "it_assets") {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMainView("home")} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+              <ChevronLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Activos Tecnológicos</h1>
+              <p className="text-gray-500 text-sm mt-0.5">{itAssetsData?.count ?? 0} activos encontrados</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {selectedIds.size > 0 && (
+              <button
+                className="btn-primary flex items-center gap-2"
+                disabled={associateMutation.isPending}
+                onClick={() => associateMutation.mutate(Array.from(selectedIds))}
+              >
+                <Shield size={16} />
+                {associateMutation.isPending
+                  ? "Asociando..."
+                  : `Asociar a TI (${selectedIds.size})`}
+              </button>
+            )}
+            <button
+              className="btn-secondary flex items-center gap-2"
+              onClick={() => setShowNewProfileModal(true)}
+            >
+              <Plus size={16} /> Perfil manual
+            </button>
+          </div>
+        </div>
+
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            <Package size={14} />
+            <span>{selectedIds.size} activo(s) seleccionado(s). Pulsa <strong>Asociar a TI</strong> para crear sus perfiles con riesgo inicial <em>Bajo</em>. Podrás editar cada perfil en "Activos Existentes de TI".</span>
+            <button className="ml-auto text-xs underline" onClick={() => setSelectedIds(new Set())}>Limpiar selección</button>
+          </div>
+        )}
+
+        {/* Filtros */}
+        <div className="card p-4 flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="input-field pl-9"
+              placeholder="Buscar por código, nombre, serie..."
+              value={itSearch}
+              onChange={e => { setItSearch(e.target.value); setItPage(1); }}
+            />
+          </div>
+          <select
+            className="input-field w-auto"
+            value={itCategory}
+            onChange={e => { setItCategory(e.target.value as "COMPUTO" | "TELECOMUNICACION"); setItPage(1); }}
+          >
+            <option value="COMPUTO">Equipo de Cómputo</option>
+            <option value="TELECOMUNICACION">Telecomunicaciones</option>
+          </select>
+        </div>
+
+        {/* Tabla */}
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-3 py-3 w-10"></th>
+                  {["Código activo", "Nombre", "Marca / Modelo", "Categoría", "Estado", "Custodio", "Perfil TI"].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {itAssetsLoading && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>
+                )}
+                {!itAssetsLoading && !itAssetsData?.results.length && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Sin activos en esta categoría.</td></tr>
+                )}
+                {itAssetsData?.results.map(a => {
+                  const hasProfile = !!a.it_profile_id;
+                  const isSelected = selectedIds.has(a.id);
+                  return (
+                    <tr
+                      key={a.id}
+                      className={`border-b border-gray-100 transition-colors ${
+                        hasProfile
+                          ? "bg-blue-50/40 hover:bg-blue-100/60 cursor-pointer"
+                          : isSelected
+                          ? "bg-primary-50"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={hasProfile && a.it_profile_id ? () => openProfileFromAsset(a.it_profile_id!) : undefined}
+                    >
+                      <td className="px-3 py-3 text-center" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={hasProfile}
+                          onChange={() => toggleSelect(a.id, hasProfile)}
+                          className="rounded border-gray-300 text-primary-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                      </td>
+                      <td className="px-4 py-3 font-mono text-primary-600 font-semibold">{a.asset_code}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{a.name}</td>
+                      <td className="px-4 py-3 text-gray-600">{[a.brand_name, a.model_name].filter(Boolean).join(" ") || "—"}</td>
+                      <td className="px-4 py-3 text-gray-600">{a.category_display}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          a.status === "ACTIVO" ? "bg-green-100 text-green-700"
+                          : a.status === "MANTENIMIENTO" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-600"
+                        }`}>{a.status_display}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{a.custodian_name ?? "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        {hasProfile ? (
+                          <span className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium inline-flex items-center gap-1">
+                            <Shield size={11} /> Ver perfil →
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin perfil</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {itAssetsData && itAssetsData.total_pages > 1 && (
+            <div className="flex justify-between items-center px-4 py-3 border-t border-gray-200 text-sm text-gray-500">
+              <span>Página {itPage} de {itAssetsData.total_pages}</span>
+              <div className="flex gap-2">
+                <button className="btn-secondary py-1 px-3 disabled:opacity-40" disabled={!itAssetsData.previous} onClick={() => setItPage(p => p - 1)}>Anterior</button>
+                <button className="btn-secondary py-1 px-3 disabled:opacity-40" disabled={!itAssetsData.next} onClick={() => setItPage(p => p + 1)}>Siguiente</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {showNewProfileModal && (
+          <ITAssetFormModal onClose={() => setShowNewProfileModal(false)} />
+        )}
+
+        {showProfileFormInAssets && editingProfileInAssets && (
+          <ITProfileForm
+            profile={editingProfileInAssets}
+            onClose={() => { setShowProfileFormInAssets(false); setEditingProfileInAssets(null); }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ── Vista PERFILES TI (lógica existente) ──────────────────────────────────────
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Módulo TI</h1>
-          <p className="text-gray-500 text-sm mt-1">Inventario tecnológico y licencias de software</p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMainView("home")} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Activos Existentes de TI</h1>
+            <p className="text-gray-500 text-sm mt-1">Perfiles TI y licencias de software</p>
+          </div>
         </div>
         <button
           className="btn-primary flex items-center gap-2"
@@ -402,8 +460,15 @@ export default function ITPage() {
                   <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">Sin registros</td></tr>
                 )}
                 {profileList.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 border-b border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-900">{p.asset_code}</td>
+                  <tr
+                    key={p.id}
+                    className="hover:bg-blue-50 border-b border-gray-100 cursor-pointer transition-colors"
+                    onClick={() => { setEditingProfile(p); setShowForm(true); }}
+                  >
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-primary-600 font-semibold text-xs">{p.asset_code}</span>
+                      <p className="text-gray-700 text-xs mt-0.5">{p.asset_name}</p>
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{p.hostname || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 font-mono text-xs">{p.ip_address || "—"}</td>
                     <td className="px-4 py-3 text-gray-600">{p.os_name ? `${p.os_name} ${p.os_version}` : "—"}</td>
@@ -422,10 +487,10 @@ export default function ITPage() {
                       ) : <span className="text-red-500 font-medium">Sin escaneo</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{p.antivirus || "—"}</td>
-                    <td className="px-4 py-3">
-                      <button className="text-xs text-blue-600 hover:underline" onClick={() => { setEditingProfile(p); setShowForm(true); }}>
-                        Editar
-                      </button>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                        Editar →
+                      </span>
                     </td>
                   </tr>
                 ))}

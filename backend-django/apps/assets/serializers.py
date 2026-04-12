@@ -19,7 +19,8 @@ class AssetTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssetType
-        fields = ["id", "name", "category", "category_display", "description"]
+        fields = ["id", "name", "category", "category_display", "description",
+                  "code_prefix", "is_it_managed"]
 
 
 class AssetModelSerializer(serializers.ModelSerializer):
@@ -68,13 +69,19 @@ class AssetReadSerializer(serializers.ModelSerializer):
     agency_name     = serializers.CharField(source="agency.name", read_only=True, default=None)
     department_name = serializers.CharField(source="department.name", read_only=True, default=None)
     area_name       = serializers.CharField(source="area.name", read_only=True, default=None)
-    custodian_name  = serializers.CharField(source="custodian.get_full_name", read_only=True, default=None)
+    custodian_name  = serializers.CharField(source="custodian.full_name", read_only=True, default=None)
 
     # Árbol padre-hijo
     parent_code      = serializers.CharField(source="parent_asset.asset_code", read_only=True, default=None)
     components       = ComponentReadSerializer(many=True, read_only=True)
     components_count = serializers.IntegerField(read_only=True)
     is_component     = serializers.BooleanField(read_only=True)
+
+    # Perfil TI (si existe)
+    it_profile_id    = serializers.SerializerMethodField()
+    it_risk_level    = serializers.SerializerMethodField()
+    it_hostname      = serializers.SerializerMethodField()
+    it_ip_address    = serializers.SerializerMethodField()
 
     # Depreciación
     monthly_depreciation = serializers.SerializerMethodField()
@@ -109,6 +116,8 @@ class AssetReadSerializer(serializers.ModelSerializer):
             "seps_account_code", "qr_uuid",
             # flags
             "is_active", "is_critical_it", "requires_maintenance",
+            # perfil TI inline
+            "it_profile_id", "it_risk_level", "it_hostname", "it_ip_address",
             "created_at", "updated_at",
         ]
         read_only_fields = fields
@@ -118,6 +127,28 @@ class AssetReadSerializer(serializers.ModelSerializer):
 
     def get_depreciation_info(self, obj):
         return obj.depreciation_info
+
+    def _get_it_profile(self, obj):
+        try:
+            return obj.it_profile
+        except Exception:
+            return None
+
+    def get_it_profile_id(self, obj):
+        p = self._get_it_profile(obj)
+        return p.id if p else None
+
+    def get_it_risk_level(self, obj):
+        p = self._get_it_profile(obj)
+        return p.risk_level if p else None
+
+    def get_it_hostname(self, obj):
+        p = self._get_it_profile(obj)
+        return p.hostname if p else None
+
+    def get_it_ip_address(self, obj):
+        p = self._get_it_profile(obj)
+        return p.ip_address if p else None
 
 
 class AssetWriteSerializer(serializers.ModelSerializer):

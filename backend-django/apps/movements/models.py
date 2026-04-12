@@ -38,13 +38,13 @@ class AssetMovement(BaseModel):
     origin_agency     = models.ForeignKey("locations.Agency",     on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_out",  verbose_name="Agencia origen")
     origin_department = models.ForeignKey("locations.Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_out",  verbose_name="Depto. origen")
     origin_area       = models.ForeignKey("locations.Area",       on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_out",  verbose_name="Área origen")
-    origin_custodian  = models.ForeignKey("users.CustomUser",     on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_out",  verbose_name="Custodio origen")
+    origin_custodian  = models.ForeignKey("custodians.Custodian", on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_out",  verbose_name="Custodio origen")
 
     # Destino
     dest_agency     = models.ForeignKey("locations.Agency",     on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Agencia destino")
     dest_department = models.ForeignKey("locations.Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Depto. destino")
     dest_area       = models.ForeignKey("locations.Area",       on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Área destino")
-    dest_custodian  = models.ForeignKey("users.CustomUser",     on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Custodio destino")
+    dest_custodian  = models.ForeignKey("custodians.Custodian", on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Custodio destino")
 
     # Metadatos
     reason          = models.TextField(verbose_name="Motivo del movimiento")

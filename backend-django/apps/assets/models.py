@@ -52,7 +52,9 @@ class AssetType(BaseModel):
         max_length=20, choices=AssetCategory.choices,
         verbose_name="Categoría LORTI",
     )
-    description = models.TextField(blank=True, verbose_name="Descripción")
+    description   = models.TextField(blank=True, verbose_name="Descripción")
+    code_prefix   = models.CharField(max_length=10, blank=True, verbose_name="Prefijo de código", help_text="Prefijo para generación automática de código (ej. PC, LAP, IMP)")
+    is_it_managed = models.BooleanField(default=False, verbose_name="Gestionado por TI", help_text="Aparece en el módulo TI (hostname, IP, SO, etc.)")
 
     class Meta:
         verbose_name = "Tipo de activo"
@@ -187,7 +189,7 @@ class Asset(BaseModel):
     agency     = models.ForeignKey("locations.Agency", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets", verbose_name="Agencia")
     department = models.ForeignKey("locations.Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets", verbose_name="Departamento")
     area       = models.ForeignKey("locations.Area", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets", verbose_name="Área")
-    custodian  = models.ForeignKey("users.CustomUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets_in_custody", verbose_name="Custodio")
+    custodian  = models.ForeignKey("custodians.Custodian", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets", verbose_name="Custodio")
 
     # ── Datos financieros (cifrados AES-256) ──────────────────────────────────
     purchase_value           = EncryptedDecimalField(max_digits=14, decimal_places=2, verbose_name="Valor de compra")

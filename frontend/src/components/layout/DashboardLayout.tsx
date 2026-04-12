@@ -1,14 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Calculator, Monitor, ArrowLeftRight,
-  Wrench, BarChart2, FileText, Shield, MapPin, ClipboardList,
-  Bell, FileSearch, AlertTriangle, Building2, LogOut,
-  ChevronLeft, ChevronRight, User, Menu,
+  LayoutDashboard, Package, Monitor, ArrowLeftRight,
+  Wrench, BarChart2, FileText, MapPin,
+  Building2, LogOut, ChevronLeft, ChevronRight, User,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/api/authApi";
-import type { Role } from "@/types/auth.types";
+import type { Role } from "@/@types/auth.types";
 import toast from "react-hot-toast";
 
 interface NavItemType {
@@ -19,20 +18,15 @@ interface NavItemType {
 }
 
 const NAV_ITEMS: NavItemType[] = [
-  { to: "/dashboard",     label: "Dashboard",      icon: <LayoutDashboard size={18} />, roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/assets",        label: "Activos",         icon: <Package size={18} />,         roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/accounting",    label: "Contabilidad",    icon: <Calculator size={18} />,      roles: ["ADMIN","CONTABILIDAD"] },
-  { to: "/it",            label: "TI",              icon: <Monitor size={18} />,         roles: ["ADMIN","TI"] },
-  { to: "/movements",     label: "Movimientos",     icon: <ArrowLeftRight size={18} />,  roles: ["ADMIN","TI","CONTABILIDAD"] },
-  { to: "/maintenance",   label: "Mantenimiento",   icon: <Wrench size={18} />,          roles: ["ADMIN","TI"] },
-  { to: "/reports",       label: "Reportes",        icon: <BarChart2 size={18} />,       roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/documents",     label: "Documentos",      icon: <FileText size={18} />,        roles: ["ADMIN","TI","CONTABILIDAD"] },
-  { to: "/invoice-agent", label: "Ag. Facturas",    icon: <FileSearch size={18} />,      roles: ["ADMIN","TI"] },
-  { to: "/locations",     label: "Ubicaciones",     icon: <MapPin size={18} />,          roles: ["ADMIN"] },
-  { to: "/audit",         label: "Auditoría",       icon: <ClipboardList size={18} />,   roles: ["ADMIN","AUDITOR","TI","CONTABILIDAD"] },
-  { to: "/alerts",        label: "Alertas",         icon: <Bell size={18} />,            roles: ["ADMIN","TI","CONTABILIDAD"] },
-  { to: "/compliance",    label: "Cumplimiento",    icon: <AlertTriangle size={18} />,   roles: ["ADMIN","CONTABILIDAD","AUDITOR"] },
-  { to: "/users",         label: "Usuarios",        icon: <User size={18} />,            roles: ["ADMIN"] },
+  { to: "/dashboard",   label: "Dashboard",    icon: <LayoutDashboard size={18} />, roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
+  { to: "/assets",      label: "Activos",      icon: <Package size={18} />,         roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
+  { to: "/it",          label: "TI",           icon: <Monitor size={18} />,         roles: ["ADMIN","TI"] },
+  { to: "/movements",   label: "Movimientos",  icon: <ArrowLeftRight size={18} />,  roles: ["ADMIN","TI","CONTABILIDAD"] },
+  { to: "/maintenance", label: "Mantenimiento",icon: <Wrench size={18} />,          roles: ["ADMIN","TI"] },
+  { to: "/reports",     label: "Reportes",     icon: <BarChart2 size={18} />,       roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
+  { to: "/documents",   label: "Documentos",   icon: <FileText size={18} />,        roles: ["ADMIN","TI","CONTABILIDAD"] },
+  { to: "/locations",   label: "Ubicaciones",  icon: <MapPin size={18} />,          roles: ["ADMIN"] },
+  { to: "/users",       label: "Usuarios",     icon: <User size={18} />,            roles: ["ADMIN"] },
 ];
 
 const ROLE_BADGE: Record<Role, string> = {
@@ -138,18 +132,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            {user?.mfa_enabled && (
-              <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                <Shield size={14} /> MFA activo
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/alerts" className="relative text-gray-500 hover:text-gray-700">
-              <Bell size={20} />
-            </Link>
-          </div>
+          <div className="flex items-center gap-3"></div>
+          <div className="flex items-center gap-4"></div>
         </header>
 
         {/* Content */}

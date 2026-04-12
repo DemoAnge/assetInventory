@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Search, QrCode, Filter, AlertTriangle } from "lucide-react";
+import { Package, Plus, Search, AlertTriangle } from "lucide-react";
 import { useAssets } from "@/hooks/useAssets";
 import { useAuthStore } from "@/store/authStore";
-import type { AssetStatus, AssetCategory } from "@/types/asset.types";
+import { AssetFormModal } from "./AssetFormModal";
+import type { AssetStatus, AssetCategory } from "@/@types/asset.types";
 
 const STATUS_COLORS: Record<AssetStatus, string> = {
   ACTIVO:        "bg-green-100 text-green-800",
@@ -30,6 +31,7 @@ export default function AssetsPage() {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
 
   const { data, isLoading } = useAssets({
     search: search || undefined,
@@ -41,6 +43,7 @@ export default function AssetsPage() {
   const canWrite = user?.role === "ADMIN" || user?.role === "TI";
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -51,9 +54,12 @@ export default function AssetsPage() {
           </p>
         </div>
         {canWrite && (
-          <Link to="/assets/new" className="btn-primary flex items-center gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
             <Plus size={16} /> Nuevo Activo
-          </Link>
+          </button>
         )}
       </div>
 
@@ -142,7 +148,7 @@ export default function AssetsPage() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="font-medium text-gray-900">{asset.name}</p>
-                      {asset.brand && <p className="text-xs text-gray-500">{asset.brand} {asset.model_name}</p>}
+                      {asset.brand_name && <p className="text-xs text-gray-500">{asset.brand_name} {asset.model_name}</p>}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -221,5 +227,10 @@ export default function AssetsPage() {
         )}
       </div>
     </div>
+
+    {showModal && (
+      <AssetFormModal onClose={() => setShowModal(false)} />
+    )}
+    </>
   );
 }

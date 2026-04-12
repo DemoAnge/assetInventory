@@ -8,8 +8,8 @@ class MovementReadSerializer(serializers.ModelSerializer):
     movement_type_display = serializers.CharField(source="get_movement_type_display", read_only=True)
     origin_agency_name    = serializers.CharField(source="origin_agency.name", read_only=True, default=None)
     dest_agency_name      = serializers.CharField(source="dest_agency.name", read_only=True, default=None)
-    origin_custodian_name = serializers.CharField(source="origin_custodian.get_full_name", read_only=True, default=None)
-    dest_custodian_name   = serializers.CharField(source="dest_custodian.get_full_name", read_only=True, default=None)
+    origin_custodian_name = serializers.CharField(source="origin_custodian.full_name", read_only=True, default=None)
+    dest_custodian_name   = serializers.CharField(source="dest_custodian.full_name", read_only=True, default=None)
     authorized_by_name    = serializers.CharField(source="authorized_by.get_full_name", read_only=True, default=None)
     component_movements   = serializers.SerializerMethodField()
 

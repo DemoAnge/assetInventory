@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, ChevronDown, ChevronRight, Building2, LayoutGrid, MapPin, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { locationsApi } from "@/api/locationsApi";
-import type { AgencyType, DepartmentType, AreaType } from "@/types/location.types";
+import type { AgencyType, DepartmentType, AreaType } from "@/@types/location.types";
 import toast from "react-hot-toast";
 
 // ── Formulario agencia ─────────────────────────────────────────────────────────

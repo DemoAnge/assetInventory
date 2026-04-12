@@ -6,6 +6,7 @@ import io
 import qrcode
 import base64
 from django.utils import timezone
+import re
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -44,7 +45,8 @@ class AssetViewSet(viewsets.ModelViewSet):
     filterset_fields    = ["category", "status", "agency", "department", "area",
                            "is_active", "is_critical_it", "is_fully_depreciated",
                            "parent_asset", "custodian"]
-    search_fields       = ["asset_code", "name", "serial_number", "brand",
+    search_fields       = ["asset_code", "name", "serial_number",
+                           "asset_model__brand__name", "asset_model__name",
                            "invoice_number", "supplier"]
     ordering_fields     = ["asset_code", "name", "purchase_date", "purchase_value", "created_at"]
     ordering            = ["-created_at"]
@@ -55,7 +57,7 @@ class AssetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = (
             Asset.objects
-            .select_related("agency", "department", "area", "custodian", "parent_asset")
+            .select_related("agency", "department", "area", "custodian", "parent_asset", "it_profile")
             .prefetch_related("components")
             .filter(is_active=True)
         )
@@ -140,6 +142,46 @@ class AssetViewSet(viewsets.ModelViewSet):
             ip_address=get_client_ip(request),
         )
         return Response(AssetReadSerializer(component).data, status=status.HTTP_201_CREATED)
+
+    # ── POST /assets/{id}/attach-component/ ─────────────────────────────────
+    @action(detail=True, methods=["post"], url_path="attach-component")
+    def attach_component(self, request, pk=None):
+        """
+        Asocia un activo EXISTENTE como componente de este activo padre.
+        Body: { component_id: int, component_type: str }
+        """
+        parent = self.get_object()
+        component_id   = request.data.get("component_id")
+        component_type = request.data.get("component_type", "OTRO")
+
+        if not component_id:
+            return Response({"detail": "component_id es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            component = Asset.objects.get(pk=component_id, is_active=True)
+        except Asset.DoesNotExist:
+            return Response({"detail": "Activo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if component.pk == parent.pk:
+            return Response({"detail": "Un activo no puede ser componente de sí mismo."}, status=status.HTTP_400_BAD_REQUEST)
+        if component.parent_asset_id:
+            return Response({"detail": "Este activo ya es componente de otro activo."}, status=status.HTTP_400_BAD_REQUEST)
+        if component.components.filter(is_active=True).exists():
+            return Response({"detail": "No se puede asociar un activo que ya tiene componentes propios."}, status=status.HTTP_400_BAD_REQUEST)
+
+        component.parent_asset   = parent
+        component.component_type = component_type
+        component.save(update_fields=["parent_asset", "component_type"])
+
+        AuditLog.objects.create(
+            user=request.user, action=AuditAction.UPDATE,
+            model="Asset", object_id=component.pk,
+            object_code=component.asset_code, object_name=component.name,
+            module="assets",
+            changed_fields={"parent_asset": {"before": None, "after": str(parent.pk)}},
+            ip_address=get_client_ip(request),
+        )
+        return Response(AssetReadSerializer(component).data)
 
     # ── DELETE /assets/{id}/components/{comp_id}/ ────────────────────────────
     @action(detail=True, methods=["delete"], url_path=r"components/(?P<comp_id>\d+)")
@@ -268,6 +310,43 @@ class AssetTypeViewSet(viewsets.ModelViewSet):
         if self.action in ("create", "update", "partial_update", "destroy"):
             return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()
+
+    # ── GET /asset-types/{id}/next-code/ ─────────────────────────────────────
+    @action(detail=True, methods=["get"], url_path="next-code")
+    def next_code(self, request, pk=None):
+        """
+        Devuelve el siguiente código libre para el tipo de activo dado.
+        Ejemplo: tipo con prefix "PC" → busca PC001, PC002… y devuelve el primero libre.
+        """
+        asset_type = self.get_object()
+        prefix = asset_type.code_prefix.upper() if asset_type.code_prefix else asset_type.name[:3].upper()
+
+        # Obtener todos los códigos que empiecen con ese prefijo
+        existing = (
+            Asset.objects
+            .filter(asset_code__istartswith=prefix)
+            .values_list("asset_code", flat=True)
+        )
+
+        # Extraer los números usados
+        used_numbers = set()
+        for code in existing:
+            m = re.match(rf"^{re.escape(prefix)}(\d+)$", code, re.IGNORECASE)
+            if m:
+                used_numbers.add(int(m.group(1)))
+
+        # Encontrar el siguiente libre
+        n = 1
+        while n in used_numbers:
+            n += 1
+
+        next_code = f"{prefix}{str(n).zfill(3)}"
+        return Response({
+            "prefix": prefix,
+            "next_code": next_code,
+            "asset_type": asset_type.name,
+            "last_number": n,
+        })
 
 
 class AssetModelViewSet(viewsets.ModelViewSet):

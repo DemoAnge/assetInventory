@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { PaginatedResponseType } from "@/types/common.types";
+import type { PaginatedResponseType } from "@/@types/common.types";
 
 export interface UserType {
   id: number;

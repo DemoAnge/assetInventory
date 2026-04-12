@@ -1,6 +1,9 @@
 import axiosClient from "./axiosClient";
-import type { AssetType, AssetFormType, AssetDeactivateFormType, ValidateDeactivationType } from "@/types/asset.types";
-import type { PaginatedResponseType } from "@/types/common.types";
+import type {
+  AssetType, AssetFormType, AssetDeactivateFormType, ValidateDeactivationType,
+  AssetTypeType, AssetModelType, BrandType, NextCodeType,
+} from "@/@types/asset.types";
+import type { PaginatedResponseType } from "@/@types/common.types";
 
 export const assetsApi = {
   // CRUD
@@ -29,6 +32,9 @@ export const assetsApi = {
   removeComponent: (parentId: number, compId: number) =>
     axiosClient.delete(`/assets/${parentId}/components/${compId}/`),
 
+  attachComponent: (parentId: number, data: { component_id: number; component_type: string }) =>
+    axiosClient.post<AssetType>(`/assets/${parentId}/attach-component/`, data),
+
   // Baja
   validateDeactivation: (id: number) =>
     axiosClient.get<ValidateDeactivationType>(`/assets/${id}/validate-deactivation/`),
@@ -42,4 +48,24 @@ export const assetsApi = {
 
   getByQr: (uuid: string) =>
     axiosClient.get<AssetType>(`/assets/by-qr/?uuid=${uuid}`),
+
+  // Catálogos
+  getBrands: (params?: Record<string, unknown>) =>
+    axiosClient.get<PaginatedResponseType<BrandType>>("/assets/brands/", { params }),
+
+  createBrand: (data: { name: string; country?: string; website?: string }) =>
+    axiosClient.post<BrandType>("/assets/brands/", data),
+
+  getAssetTypes: (params?: Record<string, unknown>) =>
+    axiosClient.get<PaginatedResponseType<AssetTypeType>>("/assets/asset-types/", { params }),
+
+  getAssetModels: (params?: Record<string, unknown>) =>
+    axiosClient.get<PaginatedResponseType<AssetModelType>>("/assets/asset-models/", { params }),
+
+  createAssetModel: (data: { name: string; brand: number; asset_type: number; specs?: string }) =>
+    axiosClient.post<AssetModelType>("/assets/asset-models/", data),
+
+  // Código automático
+  nextCode: (assetTypeId: number) =>
+    axiosClient.get<NextCodeType>(`/assets/asset-types/${assetTypeId}/next-code/`),
 };

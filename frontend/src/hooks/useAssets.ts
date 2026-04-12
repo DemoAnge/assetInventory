@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { assetsApi } from "@/api/assetsApi";
-import type { AssetFormType, AssetDeactivateFormType } from "@/types/asset.types";
+import type { AssetFormType, AssetDeactivateFormType } from "@/@types/asset.types";
 
 const KEYS = {
   all:    ["assets"] as const,

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { AuthStateType, UserType } from "@/types/auth.types";
+import type { AuthStateType, UserType } from "@/@types/auth.types";
 
 export const useAuthStore = create<AuthStateType>()(
   persist(
@@ -8,26 +8,21 @@ export const useAuthStore = create<AuthStateType>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      mfaVerified: false,
       isAuthenticated: false,
 
-      setAuth: (user: UserType, access: string, refresh: string, mfaVerified = false) =>
+      setAuth: (user: UserType, access: string, refresh: string) =>
         set({
           user,
           accessToken: access,
           refreshToken: refresh,
-          mfaVerified,
           isAuthenticated: true,
         }),
-
-      setMfaVerified: (verified: boolean) => set({ mfaVerified: verified }),
 
       logout: () =>
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
-          mfaVerified: false,
           isAuthenticated: false,
         }),
     }),

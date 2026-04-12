@@ -56,5 +56,15 @@ secrets/
 # Claude
 .claude/
 
-# SQL scripts
+# SQL scripts de prueba / seeds locales
 sql/
+
+# Logs de desarrollo local
+logs/
+
+# Agentes experimentales (no parte del sistema principal)
+agents/
+
+# Archivos sueltos de notas / pruebas
+"Estructura creada"
+echo

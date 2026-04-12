@@ -24,18 +24,15 @@ INSTALLED_APPS = [
     "django_filters",
     # Apps del sistema
     "apps.users",
+    "apps.custodians",
     "apps.locations",
     "apps.assets",
-    "apps.accounting",
     "apps.it_module",
     "apps.movements",
     "apps.maintenance",
     "apps.reports",
     "apps.documents",
-    "apps.invoice_agent",
-    "apps.audit",
-    "apps.alerts",
-    "apps.compliance",
+    "apps.audit",       # Mantener: AuditLog lo usan assets/users/it_module
     "apps.security",
 ]
 
@@ -49,7 +46,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.security.middleware.SecurityHeadersMiddleware",
-    "apps.audit.middleware.AuditMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

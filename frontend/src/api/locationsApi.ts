@@ -1,6 +1,6 @@
 import axiosClient from "./axiosClient";
-import type { AgencyType, DepartmentType, AreaType } from "@/types/location.types";
-import type { PaginatedResponseType } from "@/types/common.types";
+import type { AgencyType, DepartmentType, AreaType } from "@/@types/location.types";
+import type { PaginatedResponseType } from "@/@types/common.types";
 
 export const locationsApi = {
   // Agencias
