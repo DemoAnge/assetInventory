@@ -256,6 +256,28 @@ class AssetViewSet(viewsets.ModelViewSet):
             "qr_data": qr_data,
         })
 
+    # ── GET /assets/choices/ ─────────────────────────────────────────────────
+    @action(detail=False, methods=["get"], url_path="choices",
+            permission_classes=[IsAuthenticated])
+    def choices(self, request):
+        """
+        Devuelve los choices del modelo Asset como listas {value, label}.
+        Evita quemado de constantes en el frontend.
+        GET /api/v1/assets/choices/
+        """
+        from .models import ComponentType, AssetCategory, AssetStatus
+        return Response({
+            "component_types": [
+                {"value": v, "label": l} for v, l in ComponentType.choices
+            ],
+            "asset_categories": [
+                {"value": v, "label": l} for v, l in AssetCategory.choices
+            ],
+            "asset_statuses": [
+                {"value": v, "label": l} for v, l in AssetStatus.choices
+            ],
+        })
+
     # ── GET /assets/by-qr/?uuid=<uuid> ───────────────────────────────────────
     @action(detail=False, methods=["get"], url_path="by-qr")
     def by_qr(self, request):
@@ -301,7 +323,7 @@ class AssetTypeViewSet(viewsets.ModelViewSet):
     queryset = AssetType.objects.all()
     serializer_class = AssetTypeSerializer
     permission_classes = [IsAuthenticated, IsAnyStaff]
-    filterset_fields = ["category"]
+    filterset_fields = ["category", "component_type_link"]
     search_fields = ["name"]
     ordering_fields = ["category", "name"]
     ordering = ["category", "name"]

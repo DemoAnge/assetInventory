@@ -24,6 +24,25 @@ class AssetCategory(models.TextChoices):
     OTRO             = "OTRO",             "Otro"
 
 
+class ComponentType(models.TextChoices):
+    MONITOR     = "MONITOR",     "Monitor"
+    TECLADO     = "TECLADO",     "Teclado"
+    MOUSE       = "MOUSE",       "Mouse"
+    PARLANTE    = "PARLANTE",    "Parlante / Bocina"
+    ANTENA_WIFI = "ANTENA_WIFI", "Antena WiFi"
+    UPS         = "UPS",         "UPS / Regulador"
+    DOCKING     = "DOCKING",     "Docking Station"
+    PATCH_PANEL = "PATCH_PANEL", "Patch Panel"
+    KVM         = "KVM",         "Switch KVM"
+    RACK        = "RACK",        "Rack / Gabinete"
+    SWITCH      = "SWITCH",      "Switch de red"
+    DISCO       = "DISCO",       "Disco duro adicional"
+    MEMORIA     = "MEMORIA",     "Módulo de memoria"
+    IMPRESORA   = "IMPRESORA",   "Impresora"
+    CAMARA      = "CAMARA",      "Cámara / Escáner"
+    OTRO        = "OTRO",        "Otro componente"
+
+
 # ── Catálogos normalizados ─────────────────────────────────────────────────────
 
 class Brand(BaseModel):
@@ -55,6 +74,12 @@ class AssetType(BaseModel):
     description   = models.TextField(blank=True, verbose_name="Descripción")
     code_prefix   = models.CharField(max_length=10, blank=True, verbose_name="Prefijo de código", help_text="Prefijo para generación automática de código (ej. PC, LAP, IMP)")
     is_it_managed = models.BooleanField(default=False, verbose_name="Gestionado por TI", help_text="Aparece en el módulo TI (hostname, IP, SO, etc.)")
+    component_type_link = models.CharField(
+        max_length=20, choices=ComponentType.choices,
+        null=True, blank=True,
+        verbose_name="Tipo de componente vinculado",
+        help_text="Vincula este AssetType con un ComponentType para generación automática de código al crear componentes",
+    )
 
     class Meta:
         verbose_name = "Tipo de activo"
@@ -72,9 +97,8 @@ class AssetModel(BaseModel):
     Ejemplo: Dell / Latitude 5540 / Laptop
     """
     brand      = models.ForeignKey(Brand, on_delete=models.PROTECT, related_name="models", verbose_name="Marca")
-    asset_type = models.ForeignKey(AssetType, on_delete=models.PROTECT, related_name="models", verbose_name="Tipo")
+    asset_type = models.ForeignKey(AssetType, on_delete=models.SET_NULL, null=True, blank=True, related_name="models", verbose_name="Tipo")
     name       = models.CharField(max_length=150, verbose_name="Nombre del modelo")
-    specs      = models.TextField(blank=True, verbose_name="Especificaciones técnicas base")
 
     class Meta:
         verbose_name = "Modelo de activo"
@@ -83,12 +107,13 @@ class AssetModel(BaseModel):
         unique_together = [("brand", "name")]
 
     def __str__(self):
-        return f"{self.brand.name} {self.name} — {self.asset_type.name}"
+        tipo = self.asset_type.name if self.asset_type_id else "Sin tipo"
+        return f"{self.brand.name} {self.name} — {tipo}"
 
     @property
     def category(self) -> str:
         """Categoría LORTI derivada del tipo."""
-        return self.asset_type.category
+        return self.asset_type.category if self.asset_type_id else ""
 
 
 class AssetStatus(models.TextChoices):
@@ -98,25 +123,6 @@ class AssetStatus(models.TextChoices):
     VENDIDO       = "VENDIDO",       "Vendido"
     PRESTADO      = "PRESTADO",      "En préstamo"
     ROBADO        = "ROBADO",        "Robado / Siniestro"
-
-
-class ComponentType(models.TextChoices):
-    MONITOR     = "MONITOR",     "Monitor"
-    TECLADO     = "TECLADO",     "Teclado"
-    MOUSE       = "MOUSE",       "Mouse"
-    PARLANTE    = "PARLANTE",    "Parlante / Bocina"
-    ANTENA_WIFI = "ANTENA_WIFI", "Antena WiFi"
-    UPS         = "UPS",         "UPS / Regulador"
-    DOCKING     = "DOCKING",     "Docking Station"
-    PATCH_PANEL = "PATCH_PANEL", "Patch Panel"
-    KVM         = "KVM",         "Switch KVM"
-    RACK        = "RACK",        "Rack / Gabinete"
-    SWITCH      = "SWITCH",      "Switch de red"
-    DISCO       = "DISCO",       "Disco duro adicional"
-    MEMORIA     = "MEMORIA",     "Módulo de memoria"
-    IMPRESORA   = "IMPRESORA",   "Impresora"
-    CAMARA      = "CAMARA",      "Cámara / Escáner"
-    OTRO        = "OTRO",        "Otro componente"
 
 
 # Tasas de depreciación LORTI Art. 28

@@ -9,9 +9,14 @@ from .models import Asset, Brand, AssetType, AssetModel
 # ── Catálogos ─────────────────────────────────────────────────────────────────
 
 class BrandSerializer(serializers.ModelSerializer):
+    models_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Brand
-        fields = ["id", "name", "country", "website"]
+        fields = ["id", "name", "website", "models_count"]
+
+    def get_models_count(self, obj):
+        return obj.models.count()
 
 
 class AssetTypeSerializer(serializers.ModelSerializer):
@@ -20,19 +25,29 @@ class AssetTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetType
         fields = ["id", "name", "category", "category_display", "description",
-                  "code_prefix", "is_it_managed"]
+                  "code_prefix", "is_it_managed", "component_type_link"]
 
 
 class AssetModelSerializer(serializers.ModelSerializer):
-    brand_name      = serializers.CharField(source="brand.name", read_only=True)
-    asset_type_name = serializers.CharField(source="asset_type.name", read_only=True)
-    category        = serializers.CharField(source="asset_type.category", read_only=True)
-    category_display = serializers.CharField(source="asset_type.get_category_display", read_only=True)
+    brand_name       = serializers.CharField(source="brand.name", read_only=True)
+    asset_type_name  = serializers.SerializerMethodField()
+    category         = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
 
     class Meta:
         model = AssetModel
         fields = ["id", "name", "brand", "brand_name", "asset_type", "asset_type_name",
-                  "category", "category_display", "specs"]
+                  "category", "category_display"]
+        extra_kwargs = {"asset_type": {"required": False, "allow_null": True}}
+
+    def get_asset_type_name(self, obj):
+        return obj.asset_type.name if obj.asset_type_id else None
+
+    def get_category(self, obj):
+        return obj.asset_type.category if obj.asset_type_id else None
+
+    def get_category_display(self, obj):
+        return obj.asset_type.get_category_display() if obj.asset_type_id else None
 
 
 # ── Activos ───────────────────────────────────────────────────────────────────

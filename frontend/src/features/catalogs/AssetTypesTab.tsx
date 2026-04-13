@@ -5,11 +5,13 @@ import { assetsApi } from "@/api/assetsApi";
 import type { AssetTypeType } from "@/@types/asset.types";
 import { Badge } from "@/components/shared/Badge";
 import { ConfirmDelete } from "@/components/shared/ConfirmDelete";
-import { CATEGORIES, CAT_COLORS } from "@/utils/assetConstants";
+import { CAT_COLORS } from "@/utils/assetConstants";
+import { useAssetChoices } from "@/hooks/useAssetChoices";
 import toast from "react-hot-toast";
 
 export function AssetTypesTab() {
   const qc = useQueryClient();
+  const { assetCategories } = useAssetChoices();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -102,7 +104,7 @@ export function AssetTypesTab() {
               <label className="text-xs text-gray-600">Categoría *</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                 className="mt-0.5 w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white">
-                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {assetCategories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>
@@ -161,7 +163,7 @@ export function AssetTypesTab() {
                       <td className="px-4 py-2">
                         <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
                           className="border border-gray-300 rounded px-2 py-1 text-sm bg-white w-full">
-                          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          {assetCategories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
                       </td>
                       <td className="px-4 py-2">

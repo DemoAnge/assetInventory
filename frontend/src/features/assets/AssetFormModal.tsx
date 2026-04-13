@@ -8,18 +8,20 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, RefreshCw, Plus } from "lucide-react";
-import { useCreateAsset, useUpdateAsset } from "@/hooks/useAssets";
+import { useCreateAsset, useUpdateAsset, useAddComponent } from "@/hooks/useAssets";
+import { useAssetChoices } from "@/hooks/useAssetChoices";
 import { locationsApi } from "@/api/locationsApi";
 import { custodiansApi } from "@/api/custodiansApi";
 import { assetsApi } from "@/api/assetsApi";
 import type {
-  AssetType, AssetFormType, AssetStatus, AssetModelType,
+  AssetType, AssetFormType, AssetStatus, AssetModelType, ComponentType,
 } from "@/@types/asset.types";
-import { SEPS_CODES, USEFUL_LIFE, CATEGORIES, SEPS_ACCOUNTS } from "@/utils/assetConstants";
+import { SEPS_CODES, USEFUL_LIFE, SEPS_ACCOUNTS } from "@/utils/assetConstants";
 import toast from "react-hot-toast";
 
 interface Props {
   asset?: AssetType;
+  parentAsset?: AssetType;
   onClose: () => void;
 }
 
@@ -36,12 +38,27 @@ const INITIAL: FormState = {
   invoice_number: "", supplier: "",
   agency: null, department: null, area: null, custodian: null,
   is_critical_it: false,
+  parent_asset: null, component_type: null,
 };
 
-export function AssetFormModal({ asset, onClose }: Props) {
+export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
   const isEdit = !!asset;
+  const isComponent = !!parentAsset;
   const [form, setForm] = useState<FormState>(() => {
-    if (!asset) return INITIAL;
+    if (!asset && !parentAsset) return INITIAL;
+    if (!asset && parentAsset) return {
+      ...INITIAL,
+      category: parentAsset.category,
+      seps_account_code: SEPS_CODES[parentAsset.category] ?? "1899",
+      useful_life_years: USEFUL_LIFE[parentAsset.category] ?? 5,
+      asset_model: parentAsset.asset_model ?? null,
+      agency: parentAsset.agency,
+      department: parentAsset.department,
+      area: parentAsset.area,
+      custodian: parentAsset.custodian,
+      parent_asset: parentAsset.id,
+      component_type: "OTRO",
+    };
     return {
       asset_code: asset.asset_code, name: asset.name,
       category: asset.category, status: asset.status,
@@ -63,7 +80,9 @@ export function AssetFormModal({ asset, onClose }: Props) {
     };
   });
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(() => asset?.category ?? "");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => asset?.category ?? parentAsset?.category ?? ""
+  );
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -78,6 +97,8 @@ export function AssetFormModal({ asset, onClose }: Props) {
 
   const create = useCreateAsset();
   const update = useUpdateAsset(asset?.id ?? 0);
+  const addComponent = useAddComponent(parentAsset?.id ?? 0);
+  const { componentTypes, assetCategories } = useAssetChoices();
 
   // ── Catálogos ────────────────────────────────────────────────────────────
   const { data: typesData } = useQuery({
@@ -90,13 +111,12 @@ export function AssetFormModal({ asset, onClose }: Props) {
   });
 
   const { data: modelsData } = useQuery({
-    queryKey: ["asset-models", selectedTypeId, selectedBrandId],
+    queryKey: ["asset-models", selectedBrandId],
     queryFn: () => assetsApi.getAssetModels({
-      asset_type: selectedTypeId,
       ...(selectedBrandId ? { brand: selectedBrandId } : {}),
       page_size: 100,
     }).then(r => r.data.results),
-    enabled: !!selectedTypeId,
+    enabled: !!selectedBrandId,
     staleTime: 60_000,
   });
 
@@ -104,6 +124,14 @@ export function AssetFormModal({ asset, onClose }: Props) {
     queryKey: ["brands"],
     queryFn: () => assetsApi.getBrands({ page_size: 100 }).then(r => r.data.results),
     staleTime: 120_000,
+  });
+
+  // Todos los tipos (sin filtro de categoría) — necesario para lookup por component_type
+  const { data: allTypesData } = useQuery({
+    queryKey: ["asset-types", "all"],
+    queryFn: () => assetsApi.getAssetTypes({ page_size: 200 }).then(r => r.data.results),
+    staleTime: 120_000,
+    enabled: isComponent,
   });
 
   const { data: agenciesData } = useQuery({
@@ -148,7 +176,7 @@ export function AssetFormModal({ asset, onClose }: Props) {
 
   // Mutation para crear nuevo modelo
   const createModel = useMutation({
-    mutationFn: (data: { name: string; brand: number; asset_type: number }) =>
+    mutationFn: (data: { name: string; brand: number }) =>
       assetsApi.createAssetModel(data).then(r => r.data),
     onSuccess: (model: AssetModelType) => {
       qc.invalidateQueries({ queryKey: ["asset-models"] });
@@ -175,9 +203,26 @@ export function AssetFormModal({ asset, onClose }: Props) {
     }
   }, [isEdit, modelsData]);
 
-  // ── Al cambiar categoría: reset tipo y modelo ────────────────────────────
+  // ── Pre-cargar marca del padre (solo componentes) ────────────────────────
   useEffect(() => {
-    if (isEdit) return;
+    if (!isComponent || !brandsData || !parentAsset?.brand_name || selectedBrandId) return;
+    const brand = brandsData.find(b => b.name === parentAsset.brand_name);
+    if (brand) setSelectedBrandId(brand.id);
+  }, [brandsData, isComponent]);
+
+  // ── Al cambiar tipo de componente: buscar AssetType por component_type_link y generar código ─────
+  useEffect(() => {
+    if (!isComponent || !form.component_type || !allTypesData) return;
+    const tipo = allTypesData.find(t => t.component_type_link === form.component_type);
+    if (tipo && tipo.id !== selectedTypeId) {
+      setSelectedTypeId(tipo.id);
+      setSelectedCategory(tipo.category);
+    }
+  }, [form.component_type, allTypesData]);
+
+  // ── Al cambiar categoría: reset tipo y modelo (NO aplica para componentes) ──
+  useEffect(() => {
+    if (isEdit || isComponent) return;
     setSelectedTypeId(null);
     setSelectedBrandId(null);
     set("asset_model", null);
@@ -186,16 +231,17 @@ export function AssetFormModal({ asset, onClose }: Props) {
   // ── Auto-fill al cambiar tipo ────────────────────────────────────────────
   useEffect(() => {
     if (!selectedTypeId || isEdit) return;
-    const tipo = typesData?.find(t => t.id === selectedTypeId);
+    const tipo = (isComponent ? allTypesData : typesData)?.find(t => t.id === selectedTypeId);
     if (!tipo) return;
     setForm(f => ({
       ...f,
       category: tipo.category,
       seps_account_code: SEPS_CODES[tipo.category] ?? "1899",
       useful_life_years: USEFUL_LIFE[tipo.category] ?? 5,
-      asset_model: null,
+      // En modo componente conservar marca y modelo del padre; en activo normal limpiar
+      ...(isComponent ? {} : { asset_model: null }),
     }));
-    setSelectedBrandId(null);
+    if (!isComponent) setSelectedBrandId(null);
     fetchNextCode(selectedTypeId);
   }, [selectedTypeId]);
 
@@ -238,7 +284,7 @@ export function AssetFormModal({ asset, onClose }: Props) {
 
   function validate(): boolean {
     const e: typeof errors = {};
-    if (!form.asset_code.trim())  e.asset_code     = "Código obligatorio.";
+    if (!form.asset_code.trim())  e.asset_code     = "Seleccione el tipo para generar el código.";
     if (!form.name.trim())        e.name           = "Nombre obligatorio.";
     if (!form.purchase_value)     e.purchase_value = "Valor de compra obligatorio.";
     if (!form.purchase_date)      e.purchase_date  = "Fecha de compra obligatoria.";
@@ -247,27 +293,35 @@ export function AssetFormModal({ asset, onClose }: Props) {
     return Object.keys(e).length === 0;
   }
 
+  function capitalize(s: string | undefined): string | undefined {
+    if (!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
     const payload: AssetFormType = {
       ...form,
+      name:            capitalize(form.name)!,
+      color:           capitalize(form.color)           || undefined,
+      observations:    capitalize(form.observations)    || undefined,
+      supplier:        capitalize(form.supplier)        || undefined,
       serial_number:   form.serial_number   || undefined,
-      color:           form.color           || undefined,
-      observations:    form.observations    || undefined,
       invoice_number:  form.invoice_number  || undefined,
-      supplier:        form.supplier        || undefined,
       activation_date: form.activation_date || undefined,
       warranty_expiry: form.warranty_expiry || undefined,
     };
     if (isEdit) {
       update.mutate(payload, { onSuccess: onClose });
+    } else if (isComponent) {
+      addComponent.mutate(payload, { onSuccess: onClose });
     } else {
       create.mutate(payload, { onSuccess: onClose });
     }
   }
 
-  const isPending = create.isPending || update.isPending;
+  const isPending = create.isPending || update.isPending || addComponent.isPending;
 
   // Cerrar con Escape
   useEffect(() => {
@@ -289,7 +343,12 @@ export function AssetFormModal({ asset, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isEdit ? `Editar — ${asset.asset_code}` : "Nuevo Activo"}
+            {isEdit
+              ? `Editar — ${asset.asset_code}`
+              : isComponent
+                ? `Nuevo Componente de ${parentAsset.asset_code}`
+                : "Nuevo Activo"
+            }
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded">
             <X size={20} />
@@ -306,6 +365,24 @@ export function AssetFormModal({ asset, onClose }: Props) {
                 Clasificación
               </h3>
               <div className="grid grid-cols-2 gap-4">
+                {/* Tipo de componente — solo visible si es componente */}
+                {isComponent && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de componente <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className="input-field"
+                      value={form.component_type ?? "OTRO"}
+                      onChange={e => set("component_type", e.target.value as ComponentType)}
+                    >
+                      {componentTypes.map(ct => (
+                        <option key={ct.value} value={ct.value}>{ct.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Categoría */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -317,7 +394,7 @@ export function AssetFormModal({ asset, onClose }: Props) {
                     onChange={e => setSelectedCategory(e.target.value)}
                   >
                     <option value="">— Seleccione categoría —</option>
-                    {CATEGORIES.map(c => (
+                    {assetCategories.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
@@ -421,13 +498,12 @@ export function AssetFormModal({ asset, onClose }: Props) {
                         <button type="button" onClick={() => { setNewModelMode(false); setNewModelName(""); }}
                           className="btn-secondary text-xs flex-1">Cancelar</button>
                         <button type="button"
-                          disabled={!newModelName.trim() || !selectedTypeId || createModel.isPending}
+                          disabled={!newModelName.trim() || !selectedBrandId || createModel.isPending}
                           onClick={() => {
-                            if (newModelName.trim() && selectedTypeId) {
+                            if (newModelName.trim() && selectedBrandId) {
                               createModel.mutate({
                                 name: newModelName.trim(),
-                                brand: selectedBrandId ?? (brandsData?.[0]?.id ?? 0),
-                                asset_type: selectedTypeId,
+                                brand: selectedBrandId,
                               });
                             }
                           }}
@@ -453,11 +529,10 @@ export function AssetFormModal({ asset, onClose }: Props) {
                   </label>
                   <div className="relative">
                     <input
-                      className={`input-field pr-8 font-mono ${errors.asset_code ? "border-red-400" : ""}`}
+                      className={`input-field pr-8 font-mono bg-gray-50 cursor-not-allowed ${errors.asset_code ? "border-red-400" : ""}`}
                       value={form.asset_code}
-                      onChange={e => set("asset_code", e.target.value.toUpperCase())}
-                      placeholder="PC-001"
-                      disabled={isEdit}
+                      readOnly
+                      placeholder={selectedTypeId ? (codeLoading ? "Generando..." : "—") : "Seleccione el tipo"}
                     />
                     {!isEdit && selectedTypeId && (
                       <button
@@ -471,7 +546,13 @@ export function AssetFormModal({ asset, onClose }: Props) {
                     )}
                   </div>
                   {errors.asset_code && <p className="text-xs text-red-500 mt-1">{errors.asset_code}</p>}
-                  {!isEdit && <p className="text-xs text-gray-400 mt-1">Auto-generado al elegir el tipo. Editable.</p>}
+                  {!isEdit && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      {selectedTypeId
+                        ? "Código auto-generado — no editable."
+                        : "Se generará automáticamente al seleccionar el tipo."}
+                    </p>
+                  )}
                 </div>
 
                 <div>

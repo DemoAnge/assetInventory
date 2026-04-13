@@ -53,19 +53,48 @@ export const assetsApi = {
   getBrands: (params?: Record<string, unknown>) =>
     axiosClient.get<PaginatedResponseType<BrandType>>("/assets/brands/", { params }),
 
-  createBrand: (data: { name: string; country?: string; website?: string }) =>
+  createBrand: (data: { name: string; website?: string }) =>
     axiosClient.post<BrandType>("/assets/brands/", data),
+
+  updateBrand: (id: number, data: Partial<{ name: string; website: string }>) =>
+    axiosClient.patch<BrandType>(`/assets/brands/${id}/`, data),
+
+  deleteBrand: (id: number) =>
+    axiosClient.delete(`/assets/brands/${id}/`),
 
   getAssetTypes: (params?: Record<string, unknown>) =>
     axiosClient.get<PaginatedResponseType<AssetTypeType>>("/assets/asset-types/", { params }),
 
+  createAssetType: (data: { name: string; category: string; code_prefix?: string; is_it_managed?: boolean; description?: string }) =>
+    axiosClient.post<AssetTypeType>("/assets/asset-types/", data),
+
+  updateAssetType: (id: number, data: Partial<{ name: string; category: string; code_prefix: string; is_it_managed: boolean; description: string }>) =>
+    axiosClient.patch<AssetTypeType>(`/assets/asset-types/${id}/`, data),
+
+  deleteAssetType: (id: number) =>
+    axiosClient.delete(`/assets/asset-types/${id}/`),
+
   getAssetModels: (params?: Record<string, unknown>) =>
     axiosClient.get<PaginatedResponseType<AssetModelType>>("/assets/asset-models/", { params }),
 
-  createAssetModel: (data: { name: string; brand: number; asset_type: number; specs?: string }) =>
+  createAssetModel: (data: { name: string; brand: number }) =>
     axiosClient.post<AssetModelType>("/assets/asset-models/", data),
+
+  updateAssetModel: (id: number, data: Partial<{ name: string; brand: number }>) =>
+    axiosClient.patch<AssetModelType>(`/assets/asset-models/${id}/`, data),
+
+  deleteAssetModel: (id: number) =>
+    axiosClient.delete(`/assets/asset-models/${id}/`),
 
   // Código automático
   nextCode: (assetTypeId: number) =>
     axiosClient.get<NextCodeType>(`/assets/asset-types/${assetTypeId}/next-code/`),
+
+  // Choices (ComponentType, AssetCategory, AssetStatus) desde el backend
+  getChoices: () =>
+    axiosClient.get<{
+      component_types:  { value: string; label: string }[];
+      asset_categories: { value: string; label: string }[];
+      asset_statuses:   { value: string; label: string }[];
+    }>("/assets/choices/"),
 };

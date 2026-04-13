@@ -10,6 +10,7 @@ export interface AssetTypeType {
   code_prefix: string;
   is_it_managed: boolean;
   description: string;
+  component_type_link: string | null;
 }
 
 export interface AssetModelType {
@@ -27,8 +28,8 @@ export interface AssetModelType {
 export interface BrandType {
   id: number;
   name: string;
-  country: string;
   website: string;
+  models_count: number;
 }
 
 export interface NextCodeType {

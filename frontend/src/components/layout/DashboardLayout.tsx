@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, Monitor, ArrowLeftRight,
   Wrench, BarChart2, FileText, MapPin,
-  Building2, LogOut, ChevronLeft, ChevronRight, User,
+  Building2, LogOut, ChevronLeft, ChevronRight, User, BookOpen,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/api/authApi";
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItemType[] = [
   { to: "/maintenance", label: "Mantenimiento",icon: <Wrench size={18} />,          roles: ["ADMIN","TI"] },
   { to: "/reports",     label: "Reportes",     icon: <BarChart2 size={18} />,       roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
   { to: "/documents",   label: "Documentos",   icon: <FileText size={18} />,        roles: ["ADMIN","TI","CONTABILIDAD"] },
+  { to: "/catalogs",    label: "Catálogos",    icon: <BookOpen size={18} />,        roles: ["ADMIN","TI"] },
   { to: "/locations",   label: "Ubicaciones",  icon: <MapPin size={18} />,          roles: ["ADMIN"] },
   { to: "/users",       label: "Usuarios",     icon: <User size={18} />,            roles: ["ADMIN"] },
 ];
