@@ -6,6 +6,7 @@ import io
 import qrcode
 import base64
 from django.utils import timezone
+from django.db import transaction
 import re
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -13,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.audit.models import AuditLog, AuditAction
+from apps.movements.models import AssetMovement, MovementType
 from apps.shared.permissions import IsAdmin, IsTI, IsAnyStaff
 from apps.shared.utils import get_client_ip
 from .models import Asset, AssetStatus, Brand, AssetType, AssetModel
@@ -55,12 +57,16 @@ class AssetViewSet(viewsets.ModelViewSet):
     IT_CATEGORIES = ("COMPUTO", "TELECOMUNICACION")
 
     def get_queryset(self):
+        # Si el cliente envía is_active explícitamente, respetarlo;
+        # de lo contrario, mostrar solo activos por defecto.
+        is_active_param = self.request.query_params.get("is_active")
         qs = (
             Asset.objects
             .select_related("agency", "department", "area", "custodian", "parent_asset", "it_profile")
             .prefetch_related("components")
-            .filter(is_active=True)
         )
+        if is_active_param is None:
+            qs = qs.filter(is_active=True)
         # TI solo ve activos de cómputo y telecomunicaciones
         if getattr(self.request.user, "role", None) == "TI":
             qs = qs.filter(category__in=self.IT_CATEGORIES)
@@ -92,6 +98,7 @@ class AssetViewSet(viewsets.ModelViewSet):
         )
 
     # ── Baja lógica (DELETE) ──────────────────────────────────────────────────
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         """El DELETE hace baja lógica, no elimina el registro físicamente."""
         asset = self.get_object()
@@ -100,10 +107,29 @@ class AssetViewSet(viewsets.ModelViewSet):
                 {"detail": "No se puede dar de baja un activo con componentes activos."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        baja_date = timezone.now().date()
+        # Capturar ubicación/custodio antes de modificar el activo
+        orig_agency = asset.agency
+        orig_department = asset.department
+        orig_area = asset.area
+        orig_custodian = asset.custodian
+
         asset.is_active = False
         asset.status = AssetStatus.INACTIVO
-        asset.deactivation_date = timezone.now().date()
+        asset.deactivation_date = baja_date
         asset.save(update_fields=["is_active", "status", "deactivation_date"])
+
+        AssetMovement.objects.create(
+            asset=asset,
+            movement_type=MovementType.BAJA,
+            movement_date=baja_date,
+            origin_agency=orig_agency,
+            origin_department=orig_department,
+            origin_area=orig_area,
+            origin_custodian=orig_custodian,
+            reason="Baja administrativa del activo.",
+            created_by=request.user,
+        )
         AuditLog.objects.create(
             user=request.user, action=AuditAction.ASSET_DEACTIVATION,
             model="Asset", object_id=asset.pk,
@@ -221,21 +247,43 @@ class AssetViewSet(viewsets.ModelViewSet):
         })
 
     # ── POST /assets/{id}/deactivate/ ────────────────────────────────────────
+    @transaction.atomic
     @action(detail=True, methods=["post"], url_path="deactivate")
     def deactivate(self, request, pk=None):
         asset = self.get_object()
         serializer = AssetDeactivateSerializer(data=request.data, context={"asset": asset})
         serializer.is_valid(raise_exception=True)
+        baja_date = serializer.validated_data["deactivation_date"]
+        baja_reason = serializer.validated_data["reason"]
+
+        # Capturar ubicación/custodio antes de modificar el activo
+        orig_agency = asset.agency
+        orig_department = asset.department
+        orig_area = asset.area
+        orig_custodian = asset.custodian
+
         asset.is_active = False
         asset.status = AssetStatus.INACTIVO
-        asset.deactivation_date = serializer.validated_data["deactivation_date"]
+        asset.deactivation_date = baja_date
         asset.save(update_fields=["is_active", "status", "deactivation_date"])
+
+        AssetMovement.objects.create(
+            asset=asset,
+            movement_type=MovementType.BAJA,
+            movement_date=baja_date,
+            origin_agency=orig_agency,
+            origin_department=orig_department,
+            origin_area=orig_area,
+            origin_custodian=orig_custodian,
+            reason=baja_reason,
+            created_by=request.user,
+        )
         AuditLog.objects.create(
             user=request.user, action=AuditAction.ASSET_DEACTIVATION,
             model="Asset", object_id=asset.pk,
             object_code=asset.asset_code, object_name=asset.name,
             module="assets",
-            extra_data={"reason": serializer.validated_data["reason"]},
+            extra_data={"reason": baja_reason},
             ip_address=get_client_ip(request),
         )
         return Response({"detail": f"Activo {asset.asset_code} dado de baja correctamente."})

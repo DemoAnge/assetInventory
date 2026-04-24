@@ -1,7 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { X } from "lucide-react";
 import { usersApi, type UserCreateData } from "@/api/usersApi";
+import { locationsApi } from "@/api/locationsApi";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -10,9 +12,19 @@ interface Props {
 
 export function CreateUserForm({ onClose }: Props) {
   const qc = useQueryClient();
-  const { register, handleSubmit, formState: { errors } } = useForm<UserCreateData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<UserCreateData>({
     defaultValues: { role: "AUDITOR" },
   });
+
+  const agencyValue = watch("agency");
+
+  const { data: agenciesData, isLoading: agenciesLoading } = useQuery({
+    queryKey: ["agencies-select"],
+    queryFn: () => locationsApi.getAgencies({ page_size: 100 }).then((r) => r.data.results),
+    staleTime: 60_000,
+  });
+
+  const agencyOptions = (agenciesData ?? []).map((a) => ({ value: a.id, label: a.name }));
 
   const mutation = useMutation({
     mutationFn: (data: UserCreateData) => usersApi.create(data),
@@ -71,8 +83,15 @@ export function CreateUserForm({ onClose }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID Agencia</label>
-              <input type="number" className="input w-full" {...register("agency", { valueAsNumber: true })} placeholder="Opcional" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Agencia</label>
+              <SearchableSelect
+                options={agencyOptions}
+                value={agencyValue ?? null}
+                onChange={(id) => setValue("agency", id ?? undefined)}
+                placeholder="Buscar agencia..."
+                loading={agenciesLoading}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>

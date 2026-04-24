@@ -33,12 +33,21 @@ export default function AssetsPage() {
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
 
-  const { data, isLoading } = useAssets({
-    search: search || undefined,
-    category: category || undefined,
-    status: status || undefined,
+  // Cuando el estado es INACTIVO hay que enviar is_active=false al backend,
+  // porque los activos dados de baja tienen is_active=False y el backend por
+  // defecto solo devuelve is_active=True.
+  const queryParams: Record<string, unknown> = {
     page,
-  });
+    ...(search ? { search } : {}),
+    ...(category ? { category } : {}),
+    ...(status === "INACTIVO"
+      ? { status: "INACTIVO", is_active: "false" }
+      : status
+      ? { status }
+      : {}),
+  };
+
+  const { data, isLoading } = useAssets(queryParams);
 
   const canWrite = user?.role === "ADMIN" || user?.role === "TI";
 
@@ -95,11 +104,13 @@ export default function AssetsPage() {
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
           >
-            <option value="">Todos los estados</option>
+            <option value="">Todos los estados (activos)</option>
             <option value="ACTIVO">Activo</option>
-            <option value="INACTIVO">Inactivo</option>
-            <option value="MANTENIMIENTO">Mantenimiento</option>
+            <option value="MANTENIMIENTO">En mantenimiento</option>
+            <option value="PRESTADO">Prestado</option>
             <option value="VENDIDO">Vendido</option>
+            <option value="ROBADO">Robado</option>
+            <option value="INACTIVO">Inactivo (dados de baja)</option>
           </select>
         </div>
       </div>
@@ -111,6 +122,7 @@ export default function AssetsPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Código</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Serie</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Activo</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Categoría</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
@@ -124,7 +136,7 @@ export default function AssetsPage() {
             <tbody className="divide-y divide-gray-100">
               {isLoading && (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-gray-400">
+                  <td colSpan={10} className="text-center py-12 text-gray-400">
                     <div className="flex justify-center">
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
                     </div>
@@ -133,7 +145,7 @@ export default function AssetsPage() {
               )}
               {!isLoading && data?.results.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-gray-400">
+                  <td colSpan={10} className="text-center py-12 text-gray-400">
                     No se encontraron activos con los filtros aplicados.
                   </td>
                 </tr>
@@ -144,6 +156,9 @@ export default function AssetsPage() {
                     <Link to={`/assets/${asset.id}`} className="font-mono text-primary-600 hover:underline font-medium">
                       {asset.asset_code}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                    {asset.serial_number || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div>

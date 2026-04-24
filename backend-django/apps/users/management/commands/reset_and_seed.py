@@ -87,3 +87,8 @@ class Command(BaseCommand):
             "\n   Rol:        ADMIN"
             "\n   MFA:        desactivado"
         ))
+
+        # Sembrar catálogos base
+        self.stdout.write(self.style.WARNING("\nSembrando tipos de activo..."))
+        from django.core.management import call_command
+        call_command("seed_catalogs")

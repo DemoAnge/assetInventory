@@ -9,9 +9,10 @@
  */
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Search, RefreshCw, Plus, CheckCircle } from "lucide-react";
+import { X, Search, RefreshCw, Plus, CheckCircle, Package2, AlertCircle } from "lucide-react";
 import { assetsApi } from "@/api/assetsApi";
 import { itApi } from "@/api/itApi";
+import type { SoftwareLicense } from "@/api/itApi";
 import { locationsApi } from "@/api/locationsApi";
 import { usersApi } from "@/api/usersApi";
 import type { AssetType, AssetModelType } from "@/@types/asset.types";
@@ -88,6 +89,11 @@ export default function ITAssetFormModal({ onClose }: Props) {
   // ── Formulario IT ──
   const [itForm, setItForm] = useState<Omit<ITAssetProfileFormData, "asset">>(IT_INITIAL);
 
+  // ── Softwares / licencias ──
+  const [assignSoftware, setAssignSoftware] = useState(false);
+  const [selectedLicenses, setSelectedLicenses] = useState<Set<number>>(new Set());
+  const [initialLicenses, setInitialLicenses] = useState<Set<number>>(new Set());
+
   const isExistingAsset = !!foundAsset;
   const existingProfileId = foundAsset?.it_profile_id ?? null;
 
@@ -140,6 +146,16 @@ export default function ITAssetFormModal({ onClose }: Props) {
     queryFn: () => usersApi.getAll({ page_size: 200, is_active: true }).then(r => r.data.results),
     staleTime: 60_000,
   });
+
+  // Todas las licencias disponibles
+  const { data: allLicensesData } = useQuery({
+    queryKey: ["all-licenses-for-assignment"],
+    queryFn: () => itApi.getAllLicenses({ page_size: 200 }).then(r => r.data.results),
+    staleTime: 60_000,
+    enabled: assignSoftware,
+  });
+
+  // (Las licencias asignadas se cargan en handleSearchAsset para sincronizar estado)
 
   // ── Mutations ──
   const createBrand = useMutation({
@@ -261,6 +277,14 @@ export default function ITAssetFormModal({ onClose }: Props) {
           } catch { /* sin perfil previo */ }
         }
         toast.success(`Activo ${code} encontrado — datos pre-cargados.`);
+        // Cargar licencias asignadas
+        try {
+          const licRes = await itApi.getLicensesForAsset(exact.id);
+          const ids = new Set(licRes.data.results.map((l: SoftwareLicense) => l.id));
+          setInitialLicenses(ids);
+          setSelectedLicenses(new Set(ids));
+          if (ids.size > 0) setAssignSoftware(true);
+        } catch { /* ignore */ }
       } else {
         setFoundAsset(null);
         setAssetForm({ ...ASSET_INITIAL, asset_code: code, category: "COMPUTO" });
@@ -334,6 +358,18 @@ export default function ITAssetFormModal({ onClose }: Props) {
         await itApi.updateProfile(existingProfileId, itPayload);
       } else {
         await itApi.createProfile(itPayload);
+      }
+
+      // Aplicar cambios de licencias
+      if (assignSoftware) {
+        const toAdd    = [...selectedLicenses].filter(id => !initialLicenses.has(id));
+        const toRemove = [...initialLicenses].filter(id => !selectedLicenses.has(id));
+        await Promise.allSettled([
+          ...toAdd.map(licId => itApi.assignLicense(licId, assetId)),
+          ...toRemove.map(licId => itApi.unassignLicense(licId, assetId)),
+        ]);
+        qc.invalidateQueries({ queryKey: ["all-licenses-for-assignment"] });
+        qc.invalidateQueries({ queryKey: ["asset-licenses"] });
       }
 
       qc.invalidateQueries({ queryKey: ["it-profiles"] });
@@ -703,6 +739,97 @@ export default function ITAssetFormModal({ onClose }: Props) {
                   onChange={e => setIT("notes", e.target.value)} />
               </div>
             </div>
+          </section>
+
+          {/* ── Softwares y Licencias ── */}
+          <section>
+            <label className="flex items-center gap-3 cursor-pointer select-none mb-3">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                checked={assignSoftware}
+                onChange={e => setAssignSoftware(e.target.checked)}
+              />
+              <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Package2 size={15} className="text-primary-500" />
+                Asignar Softwares y Licencias
+              </span>
+            </label>
+
+            {assignSoftware && (
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                {/* Resumen de selección */}
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between text-xs text-gray-500">
+                  <span>{selectedLicenses.size} software{selectedLicenses.size !== 1 ? "s" : ""} seleccionado{selectedLicenses.size !== 1 ? "s" : ""}</span>
+                  {selectedLicenses.size > 0 && (
+                    <button type="button" onClick={() => setSelectedLicenses(new Set())}
+                      className="text-red-500 hover:text-red-700">Limpiar selección</button>
+                  )}
+                </div>
+
+                {/* Lista de licencias */}
+                <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+                  {!allLicensesData && (
+                    <div className="px-4 py-3 text-sm text-gray-400">Cargando catálogo de software...</div>
+                  )}
+                  {allLicensesData?.map((lic: SoftwareLicense) => {
+                    const isSelected = selectedLicenses.has(lic.id);
+                    const isAlreadyAssigned = initialLicenses.has(lic.id);
+                    // Si no está asignado y no hay asientos disponibles, deshabilitar
+                    const noSeatsLeft = !isAlreadyAssigned && lic.available_seats <= 0;
+
+                    return (
+                      <label key={lic.id}
+                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                          noSeatsLeft ? "opacity-50 cursor-not-allowed bg-gray-50"
+                          : isSelected ? "bg-primary-50" : "hover:bg-gray-50"
+                        }`}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          checked={isSelected}
+                          disabled={noSeatsLeft}
+                          onChange={(e) => {
+                            const next = new Set(selectedLicenses);
+                            if (e.target.checked) next.add(lic.id); else next.delete(lic.id);
+                            setSelectedLicenses(next);
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-gray-800">{lic.software_name}</span>
+                            {lic.version && <span className="text-xs text-gray-400">v{lic.version}</span>}
+                            {lic.is_expired && (
+                              <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <AlertCircle size={10} /> Expirada
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {lic.license_type_display}
+                            {lic.vendor && ` · ${lic.vendor}`}
+                          </div>
+                        </div>
+                        {/* Contador de licencias */}
+                        <div className="text-right text-xs shrink-0">
+                          <div className={`font-semibold ${lic.available_seats === 0 ? "text-red-600" : "text-green-600"}`}>
+                            {lic.available_seats} disp.
+                          </div>
+                          <div className="text-gray-400">
+                            {lic.used_seats}/{lic.seats} en uso
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                  {allLicensesData?.length === 0 && (
+                    <div className="px-4 py-3 text-sm text-gray-400">
+                      No hay licencias registradas. Agréguelas desde el módulo TI → Licencias.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
 
         </div>

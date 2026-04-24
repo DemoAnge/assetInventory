@@ -7,6 +7,7 @@ export interface AssetMovementType {
   asset: number;
   asset_code: string;
   asset_name: string;
+  asset_serial_number: string | null;
   movement_type: MovementType;
   movement_type_display: string;
   movement_date: string;
@@ -48,5 +49,6 @@ export interface MovementFormType {
   reason: string;
   authorized_by?: number | null;
   observations?: string;
+  has_delivery_act?: boolean;
   document_ref?: string;
 }

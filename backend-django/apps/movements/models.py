@@ -47,10 +47,11 @@ class AssetMovement(BaseModel):
     dest_custodian  = models.ForeignKey("custodians.Custodian", on_delete=models.SET_NULL, null=True, blank=True, related_name="movements_in", verbose_name="Custodio destino")
 
     # Metadatos
-    reason          = models.TextField(verbose_name="Motivo del movimiento")
-    authorized_by   = models.ForeignKey("users.CustomUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="authorized_movements", verbose_name="Autorizado por")
-    observations    = models.TextField(blank=True, verbose_name="Observaciones")
-    document_ref    = models.CharField(max_length=50, blank=True, verbose_name="N° documento / acta")
+    reason            = models.TextField(verbose_name="Motivo del movimiento")
+    authorized_by     = models.ForeignKey("users.CustomUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="authorized_movements", verbose_name="Autorizado por")
+    observations      = models.TextField(blank=True, verbose_name="Observaciones")
+    has_delivery_act  = models.BooleanField(default=False, verbose_name="¿Entregado con acta?")
+    document_ref      = models.CharField(max_length=50, blank=True, verbose_name="N° documento / acta")
 
     # Si es hijo arrastrado por el padre
     parent_movement = models.ForeignKey(

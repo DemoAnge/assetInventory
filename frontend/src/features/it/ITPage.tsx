@@ -18,6 +18,7 @@ export default function ITPage() {
   const [itCategory, setItCategory] = useState<"COMPUTO" | "TELECOMUNICACION">("COMPUTO");
   const [itSearch, setItSearch] = useState("");
   const [itPage, setItPage] = useState(1);
+  const [itStatus, setItStatus] = useState("");
   const [showNewProfileModal, setShowNewProfileModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [editingProfileInAssets, setEditingProfileInAssets] = useState<ITAssetProfile | null>(null);
@@ -33,9 +34,21 @@ export default function ITPage() {
     }
   }
 
+  // Construir parámetros: si status=INACTIVO enviar is_active=false; si vacío, omitir (default activos)
+  const itQueryParams: Record<string, unknown> = {
+    category: itCategory,
+    page: itPage,
+    ...(itSearch ? { search: itSearch } : {}),
+    ...(itStatus === "INACTIVO"
+      ? { is_active: "false", status: "INACTIVO" }
+      : itStatus
+      ? { status: itStatus }
+      : {}),
+  };
+
   const { data: itAssetsData, isLoading: itAssetsLoading } = useQuery({
-    queryKey: ["it-assets-list", itCategory, itSearch, itPage],
-    queryFn: () => assetsApi.getAll({ category: itCategory, search: itSearch || undefined, page: itPage }).then(r => r.data),
+    queryKey: ["it-assets-list", itCategory, itSearch, itPage, itStatus],
+    queryFn: () => assetsApi.getAll(itQueryParams).then(r => r.data),
     enabled: mainView === "it_assets",
   });
 
@@ -95,21 +108,24 @@ export default function ITPage() {
   });
 
   const { data: licensesData } = useQuery({
-    queryKey: ["it-licenses", "all", page],
+    queryKey: ["it-license", "list", page],
     queryFn: () => itApi.getAllLicenses({ page }).then((r) => r.data),
     enabled: tab === "licenses" && subTab === "all",
+    staleTime: 0,
   });
 
   const { data: expiring } = useQuery({
-    queryKey: ["it-licenses", "expiring"],
+    queryKey: ["it-license", "expiring"],
     queryFn: () => itApi.getExpiring().then((r) => r.data),
     enabled: tab === "licenses" && subTab === "expiring",
+    staleTime: 0,
   });
 
   const { data: expired } = useQuery({
-    queryKey: ["it-licenses", "expired"],
+    queryKey: ["it-license", "expired"],
     queryFn: () => itApi.getExpired().then((r) => r.data),
     enabled: tab === "licenses" && subTab === "expired",
+    staleTime: 0,
   });
 
   const profileList: ITAssetProfile[] =
@@ -247,6 +263,19 @@ export default function ITPage() {
           >
             <option value="COMPUTO">Equipo de Cómputo</option>
             <option value="TELECOMUNICACION">Telecomunicaciones</option>
+          </select>
+          <select
+            className="input-field w-auto"
+            value={itStatus}
+            onChange={e => { setItStatus(e.target.value); setItPage(1); setSelectedIds(new Set()); }}
+          >
+            <option value="">Todos los estados (activos)</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="MANTENIMIENTO">En mantenimiento</option>
+            <option value="PRESTADO">Prestado</option>
+            <option value="VENDIDO">Vendido</option>
+            <option value="ROBADO">Robado</option>
+            <option value="INACTIVO">Inactivo (dados de baja)</option>
           </select>
         </div>
 

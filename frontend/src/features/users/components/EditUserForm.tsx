@@ -1,7 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { X } from "lucide-react";
 import { usersApi, type UserType, type UserUpdateData } from "@/api/usersApi";
+import { locationsApi } from "@/api/locationsApi";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -11,7 +13,7 @@ interface Props {
 
 export function EditUserForm({ user, onClose }: Props) {
   const qc = useQueryClient();
-  const { register, handleSubmit } = useForm<UserUpdateData>({
+  const { register, handleSubmit, setValue, watch } = useForm<UserUpdateData>({
     defaultValues: {
       first_name: user.first_name,
       last_name:  user.last_name,
@@ -22,6 +24,16 @@ export function EditUserForm({ user, onClose }: Props) {
       is_active:  user.is_active,
     },
   });
+
+  const agencyValue = watch("agency");
+
+  const { data: agenciesData, isLoading: agenciesLoading } = useQuery({
+    queryKey: ["agencies-select"],
+    queryFn: () => locationsApi.getAgencies({ page_size: 100 }).then((r) => r.data.results),
+    staleTime: 60_000,
+  });
+
+  const agencyOptions = (agenciesData ?? []).map((a) => ({ value: a.id, label: a.name }));
 
   const mutation = useMutation({
     mutationFn: (data: UserUpdateData) => usersApi.update(user.id, data),
@@ -69,8 +81,15 @@ export function EditUserForm({ user, onClose }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID Agencia</label>
-              <input type="number" className="input w-full" {...register("agency", { valueAsNumber: true })} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Agencia</label>
+              <SearchableSelect
+                options={agencyOptions}
+                value={agencyValue ?? null}
+                onChange={(id) => setValue("agency", id ?? undefined)}
+                placeholder="Buscar agencia..."
+                loading={agenciesLoading}
+                className="w-full"
+              />
             </div>
           </div>
           <div className="flex items-center gap-3">

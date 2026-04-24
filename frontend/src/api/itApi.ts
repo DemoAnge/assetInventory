@@ -6,6 +6,7 @@ export interface ITAssetProfile {
   asset: number;
   asset_code: string;
   asset_name: string;
+  asset_serial_number: string | null;
   hostname: string;
   ip_address: string | null;
   mac_address: string;
@@ -122,4 +123,15 @@ export const itApi = {
 
   getExpired: () =>
     axiosClient.get<SoftwareLicense[]>("/it/licenses/expired/"),
+
+  // Licencias asignadas a un activo específico
+  getLicensesForAsset: (assetId: number) =>
+    axiosClient.get<PaginatedResponseType<SoftwareLicense>>("/it/licenses/", { params: { asset_id: assetId, page_size: 100 } }),
+
+  // Asignar / desasignar licencia a un activo
+  assignLicense: (licenseId: number, assetId: number) =>
+    axiosClient.post<SoftwareLicense>(`/it/licenses/${licenseId}/assign/`, { asset_id: assetId }),
+
+  unassignLicense: (licenseId: number, assetId: number) =>
+    axiosClient.post<SoftwareLicense>(`/it/licenses/${licenseId}/unassign/`, { asset_id: assetId }),
 };

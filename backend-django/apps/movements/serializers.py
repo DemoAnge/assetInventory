@@ -5,6 +5,7 @@ from .models import AssetMovement
 class MovementReadSerializer(serializers.ModelSerializer):
     asset_code            = serializers.CharField(source="asset.asset_code", read_only=True)
     asset_name            = serializers.CharField(source="asset.name", read_only=True)
+    asset_serial_number   = serializers.CharField(source="asset.serial_number", read_only=True, default=None)
     movement_type_display = serializers.CharField(source="get_movement_type_display", read_only=True)
     origin_agency_name    = serializers.CharField(source="origin_agency.name", read_only=True, default=None)
     dest_agency_name      = serializers.CharField(source="dest_agency.name", read_only=True, default=None)
@@ -16,7 +17,7 @@ class MovementReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetMovement
         fields = [
-            "id", "asset", "asset_code", "asset_name",
+            "id", "asset", "asset_code", "asset_name", "asset_serial_number",
             "movement_type", "movement_type_display", "movement_date",
             "origin_agency", "origin_agency_name",
             "origin_department", "origin_area",
@@ -25,7 +26,7 @@ class MovementReadSerializer(serializers.ModelSerializer):
             "dest_department", "dest_area",
             "dest_custodian", "dest_custodian_name",
             "reason", "authorized_by", "authorized_by_name",
-            "observations", "document_ref",
+            "observations", "has_delivery_act", "document_ref",
             "parent_movement", "is_cascade",
             "component_movements", "created_at",
         ]
@@ -43,14 +44,16 @@ class MovementWriteSerializer(serializers.ModelSerializer):
             "asset", "movement_type", "movement_date",
             "origin_agency", "origin_department", "origin_area", "origin_custodian",
             "dest_agency", "dest_department", "dest_area", "dest_custodian",
-            "reason", "authorized_by", "observations", "document_ref",
+            "reason", "authorized_by", "observations", "has_delivery_act", "document_ref",
         ]
 
     def validate(self, attrs):
         mv_type = attrs.get("movement_type")
         if mv_type == "TRASLADO":
-            if not attrs.get("dest_agency"):
-                raise serializers.ValidationError({"dest_agency": "El traslado requiere agencia destino."})
+            if not attrs.get("dest_agency") and not attrs.get("dest_department") and not attrs.get("dest_area"):
+                raise serializers.ValidationError({
+                    "dest_agency": "El traslado requiere al menos agencia, departamento o área destino."
+                })
         if mv_type == "REASIGNACION":
             if not attrs.get("dest_custodian"):
                 raise serializers.ValidationError({"dest_custodian": "La reasignación requiere custodio destino."})

@@ -7,7 +7,7 @@
  */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Package, Link2, Plus, Search, Unlink } from "lucide-react";
+import { Package, Link2, Plus, Search, Unlink, Power } from "lucide-react";
 import { assetsApi } from "@/api/assetsApi";
 import { AssetFormModal } from "./AssetFormModal";
 import { useAssetChoices } from "@/hooks/useAssetChoices";
@@ -55,10 +55,25 @@ export function ComponentsPanel({ asset, canWrite }: Props) {
   const detachMutation = useMutation({
     mutationFn: (compId: number) => assetsApi.removeComponent(asset.id, compId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets", asset.id] });
+      qc.invalidateQueries({ queryKey: ["assets"] });
       toast.success("Componente desasociado.");
     },
     onError: () => toast.error("Error al desasociar el componente."),
+  });
+
+  const deactivateComponentMutation = useMutation({
+    mutationFn: (compId: number) =>
+      assetsApi.deactivate(compId, {
+        deactivation_date: new Date().toISOString().slice(0, 10),
+        reason: "Baja del componente desde el panel del activo padre.",
+      }),
+    onSuccess: () => {
+      // Invalida tanto el detalle del padre como el listado general
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Componente dado de baja. El conteo se ha actualizado.");
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.detail ?? "No se pudo dar de baja el componente."),
   });
 
   return (
@@ -132,14 +147,27 @@ export function ComponentsPanel({ asset, canWrite }: Props) {
                         {comp.status_display}
                       </span>
                       {canWrite && (
-                        <button
-                          onClick={() => detachMutation.mutate(comp.id)}
-                          disabled={detachMutation.isPending}
-                          className="text-gray-300 hover:text-red-500 p-1 rounded transition-colors"
-                          title="Desasociar componente"
-                        >
-                          <Unlink size={14} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              if (confirm(`¿Dar de baja el componente ${comp.asset_code}? Esta acción no se puede deshacer.`))
+                                deactivateComponentMutation.mutate(comp.id);
+                            }}
+                            disabled={deactivateComponentMutation.isPending}
+                            className="text-gray-300 hover:text-red-600 p-1 rounded transition-colors"
+                            title="Dar de baja este componente"
+                          >
+                            <Power size={14} />
+                          </button>
+                          <button
+                            onClick={() => detachMutation.mutate(comp.id)}
+                            disabled={detachMutation.isPending}
+                            className="text-gray-300 hover:text-orange-500 p-1 rounded transition-colors"
+                            title="Desasociar componente (sin dar de baja)"
+                          >
+                            <Unlink size={14} />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

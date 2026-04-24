@@ -8,11 +8,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from django.utils import timezone
 from apps.assets.models import Asset
 from apps.audit.models import AuditLog, AuditAction
-from apps.shared.permissions import IsTI
+from apps.shared.permissions import IsTI, IsAdmin
 from apps.shared.utils import get_client_ip
-from .models import AssetMovement
+from .models import AssetMovement, MovementType
 from .serializers import MovementReadSerializer, MovementWriteSerializer
 
 
@@ -30,7 +31,7 @@ class AssetMovementViewSet(viewsets.ModelViewSet):
                 "origin_custodian", "dest_custodian", "authorized_by",
             )
             .prefetch_related("component_movements__asset")
-            .filter(is_cascade=False)  # Solo movimientos principales en el listado
+            .filter(is_cascade=False, asset__isnull=False)  # Solo principales; excluye huérfanos
         )
 
     def get_serializer_class(self):
@@ -109,3 +110,41 @@ class AssetMovementViewSet(viewsets.ModelViewSet):
             return Response({"detail": "asset_id requerido."}, status=status.HTTP_400_BAD_REQUEST)
         movements = AssetMovement.objects.filter(asset_id=asset_id).order_by("-movement_date")
         return Response(MovementReadSerializer(movements, many=True).data)
+
+    @action(detail=False, methods=["post"], url_path="sync-bajas",
+            permission_classes=[IsAuthenticated, IsAdmin])
+    @transaction.atomic
+    def sync_bajas(self, request):
+        """
+        POST /movements/sync-bajas/
+        Crea registros BAJA para activos inactivos que no tienen uno.
+        Solo accesible por ADMIN.
+        """
+        activos_baja_ids = set(
+            AssetMovement.objects
+            .filter(movement_type=MovementType.BAJA)
+            .values_list("asset_id", flat=True)
+        )
+        pendientes = Asset.objects.filter(is_active=False).exclude(pk__in=activos_baja_ids)
+
+        created = []
+        for asset in pendientes:
+            baja_date = asset.deactivation_date or timezone.now().date()
+            mov = AssetMovement.objects.create(
+                asset=asset,
+                movement_type=MovementType.BAJA,
+                movement_date=baja_date,
+                origin_agency=asset.agency,
+                origin_department=asset.department,
+                origin_area=asset.area,
+                origin_custodian=asset.custodian,
+                reason="Baja registrada en el sistema (sincronizacion historica).",
+                created_by=request.user,
+            )
+            created.append({"asset_code": asset.asset_code, "movement_id": mov.pk})
+
+        return Response({
+            "synced": len(created),
+            "detail": f"{len(created)} movimiento(s) de baja creado(s).",
+            "records": created,
+        })

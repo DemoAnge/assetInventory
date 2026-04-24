@@ -13,6 +13,7 @@ import { useAssetChoices } from "@/hooks/useAssetChoices";
 import { locationsApi } from "@/api/locationsApi";
 import { custodiansApi } from "@/api/custodiansApi";
 import { assetsApi } from "@/api/assetsApi";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import type {
   AssetType, AssetFormType, AssetStatus, AssetModelType, ComponentType,
 } from "@/@types/asset.types";
@@ -77,6 +78,8 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
       agency: asset.agency, department: asset.department,
       area: asset.area, custodian: asset.custodian,
       is_critical_it: asset.is_critical_it,
+      parent_asset: asset.parent_asset ?? null,
+      component_type: asset.component_type ?? null,
     };
   });
 
@@ -634,54 +637,41 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Agencia</label>
-                  <select
-                    className="input-field"
-                    value={form.agency ?? ""}
-                    onChange={e => {
-                      set("agency", e.target.value ? Number(e.target.value) : null);
-                      set("department", null); set("area", null);
-                    }}
-                  >
-                    <option value="">— Sin asignar —</option>
-                    {agenciesData?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={(agenciesData ?? []).map(a => ({ value: a.id, label: a.name }))}
+                    value={form.agency}
+                    onChange={id => { set("agency", id); set("department", null); set("area", null); }}
+                    placeholder="Buscar agencia..."
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
-                  <select
-                    className="input-field"
-                    value={form.department ?? ""}
-                    onChange={e => { set("department", e.target.value ? Number(e.target.value) : null); set("area", null); }}
+                  <SearchableSelect
+                    options={(departmentsData ?? []).map(d => ({ value: d.id, label: d.name }))}
+                    value={form.department}
+                    onChange={id => { set("department", id); set("area", null); }}
+                    placeholder={form.agency ? "Buscar departamento..." : "— Seleccione agencia —"}
                     disabled={!form.agency}
-                  >
-                    <option value="">— Seleccione agencia —</option>
-                    {departmentsData?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Área</label>
-                  <select
-                    className="input-field"
-                    value={form.area ?? ""}
-                    onChange={e => set("area", e.target.value ? Number(e.target.value) : null)}
+                  <SearchableSelect
+                    options={(areasData ?? []).map(a => ({ value: a.id, label: a.name }))}
+                    value={form.area}
+                    onChange={id => set("area", id)}
+                    placeholder={form.department ? "Buscar área..." : "— Seleccione departamento —"}
                     disabled={!form.department}
-                  >
-                    <option value="">— Sin área —</option>
-                    {areasData?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Custodio</label>
-                  <select
-                    className="input-field"
-                    value={form.custodian ?? ""}
-                    onChange={e => set("custodian", e.target.value ? Number(e.target.value) : null)}
-                  >
-                    <option value="">— Sin custodio —</option>
-                    {custodiansData?.map(c => (
-                      <option key={c.id} value={c.id}>{c.full_name} — {c.position}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={(custodiansData ?? []).map(c => ({ value: c.id, label: `${c.full_name}${c.position ? ` — ${c.position}` : ""}` }))}
+                    value={form.custodian}
+                    onChange={id => set("custodian", id)}
+                    placeholder="Buscar custodio..."
+                  />
                 </div>
               </div>
             </section>
