@@ -21,7 +21,8 @@ export function useAssets(params?: Record<string, unknown>) {
 export function useAsset(id: number) {
   return useQuery({
     queryKey: KEYS.detail(id),
-    queryFn:  () => assetsApi.getById(id).then((r) => r.data),
+    // any_status=true permite cargar activos inactivos/dados de baja
+    queryFn:  () => assetsApi.getById(id, { any_status: "true" }).then((r) => r.data),
     enabled:  !!id,
   });
 }

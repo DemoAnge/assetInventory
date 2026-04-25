@@ -12,6 +12,9 @@ export const movementsApi = {
   create: (data: MovementFormType) =>
     axiosClient.post<AssetMovementType>("/movements/", data),
 
+  update: (id: number, data: { reason?: string; observations?: string; document_ref?: string }) =>
+    axiosClient.patch<AssetMovementType>(`/movements/${id}/`, data),
+
   getAssetHistory: (assetId: number) =>
     axiosClient.get<AssetMovementType[]>(`/movements/asset-history/?asset_id=${assetId}`),
 };

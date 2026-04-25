@@ -27,6 +27,9 @@ python-dateutil==2.9.0
 celery==5.4.0
 redis==5.0.6
 
+# Excel export
+openpyxl==3.1.5
+
 # Dev
 ipython==8.25.0
 django-extensions==3.2.3

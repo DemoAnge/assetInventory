@@ -7,12 +7,13 @@ from apps.shared.models import BaseModel
 
 
 class MovementType(models.TextChoices):
-    TRASLADO     = "TRASLADO",     "Traslado entre agencias/áreas"
-    PRESTAMO     = "PRESTAMO",     "Préstamo temporal"
-    DEVOLUCION   = "DEVOLUCION",   "Devolución de préstamo"
-    REASIGNACION = "REASIGNACION", "Reasignación de custodio"
-    INGRESO      = "INGRESO",      "Ingreso inicial"
-    BAJA         = "BAJA",         "Baja / Retiro"
+    TRASLADO      = "TRASLADO",      "Traslado entre agencias/áreas"
+    PRESTAMO      = "PRESTAMO",      "Préstamo temporal"
+    DEVOLUCION    = "DEVOLUCION",    "Devolución de préstamo"
+    REASIGNACION  = "REASIGNACION",  "Reasignación de custodio"
+    INGRESO       = "INGRESO",       "Ingreso inicial"
+    BAJA          = "BAJA",          "Baja / Retiro"
+    REACTIVACION  = "REACTIVACION",  "Reactivación de activo"
 
 
 class AssetMovement(BaseModel):

@@ -32,7 +32,7 @@ export function LicenseForm({ license, onClose }: Props) {
     mutationFn: (data: SoftwareLicenseFormData) =>
       license ? itApi.updateLicense(license.id, data) : itApi.createLicense(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["it-licenses"] });
+      qc.invalidateQueries({ queryKey: ["it-license"] });
       toast.success(license ? "Licencia actualizada" : "Licencia creada");
       onClose();
     },

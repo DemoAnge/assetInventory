@@ -10,6 +10,7 @@ from apps.assets.models import Asset
 from apps.audit.models import AuditLog, AuditAction
 from apps.shared.permissions import IsTI, IsAnyStaff
 from apps.shared.utils import get_client_ip
+from apps.shared.notifier import notify_role
 from .models import MaintenanceRecord, MaintenanceStatus, MaintenanceStatusLog, Technician
 from .serializers import (
     MaintenanceReadSerializer, MaintenanceWriteSerializer,
@@ -97,6 +98,14 @@ class MaintenanceViewSet(viewsets.ModelViewSet):
         if record.status == MaintenanceStatus.EN_PROCESO:
             Asset.objects.filter(pk=record.asset_id).update(requires_maintenance=True)
 
+        # Notificación al rol TI sobre nuevo mantenimiento
+        notify_role(
+            "TI",
+            f"Nuevo mantenimiento: {record.get_maintenance_type_display()}",
+            f"{record.asset.asset_code} — {record.asset.name} | OT: {record.work_order} | Fecha: {record.scheduled_date}",
+            type_="info", module="maintenance",
+        )
+
         AuditLog.objects.create(
             user=self.request.user, action=AuditAction.MAINTENANCE,
             model="MaintenanceRecord", object_id=record.pk,
@@ -124,8 +133,21 @@ class MaintenanceViewSet(viewsets.ModelViewSet):
 
         if record.status == MaintenanceStatus.COMPLETADO:
             Asset.objects.filter(pk=record.asset_id).update(requires_maintenance=False)
+            notify_role(
+                "TI",
+                "Mantenimiento completado",
+                f"{record.asset.asset_code} — OT: {record.work_order}",
+                type_="success", module="maintenance",
+            )
         elif record.status == MaintenanceStatus.EN_PROCESO:
             Asset.objects.filter(pk=record.asset_id).update(requires_maintenance=True)
+        elif record.status == MaintenanceStatus.VENCIDO:
+            notify_role(
+                "TI",
+                "Mantenimiento vencido",
+                f"{record.asset.asset_code} — OT: {record.work_order} sin realizar",
+                type_="error", module="maintenance",
+            )
 
     # ── GET /maintenance/next-ot/ ─────────────────────────────────────────────
     @action(detail=False, methods=["get"], url_path="next-ot")

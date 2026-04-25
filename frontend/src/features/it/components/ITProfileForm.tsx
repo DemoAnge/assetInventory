@@ -5,69 +5,6 @@ import { itApi, type ITAssetProfile, type ITAssetProfileFormData, type SoftwareL
 import { AssetSearchSelect } from "@/components/shared/AssetSearchSelect";
 import toast from "react-hot-toast";
 
-// ── Select de antivirus desde el catálogo de licencias ───────────────────────
-
-function AntivirusSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [filter, setFilter] = useState("");
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["licenses-for-antivirus"],
-    queryFn: () => itApi.getAllLicenses({ page_size: 200 }).then((r) => r.data.results),
-    staleTime: 60_000,
-  });
-
-  const licenses = data ?? [];
-  const filtered = filter
-    ? licenses.filter((l) =>
-        l.software_name.toLowerCase().includes(filter.toLowerCase())
-      )
-    : licenses;
-
-  const label = (l: { software_name: string; version: string }) =>
-    l.version ? `${l.software_name} v${l.version}` : l.software_name;
-
-  return (
-    <div className="space-y-1.5">
-      <input
-        type="text"
-        className="input-field text-sm"
-        placeholder="Filtrar licencias..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
-      <select
-        className="input-field"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={isLoading}
-      >
-        <option value="">— Sin antivirus / Sin asignar —</option>
-        {isLoading && <option disabled>Cargando licencias...</option>}
-        {filtered.map((lic) => (
-          <option key={lic.id} value={label(lic)}>
-            {label(lic)}
-            {lic.is_expired ? " ⚠ Vencida" : ""}
-          </option>
-        ))}
-        {!isLoading && filtered.length === 0 && filter && (
-          <option disabled>Sin resultados para "{filter}"</option>
-        )}
-      </select>
-      {!isLoading && licenses.length === 0 && (
-        <p className="text-xs text-amber-600">
-          No hay licencias registradas. Registre software en la sección "Licencias" del módulo TI.
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ── Panel de software instalado (solo en edición) ─────────────────────────────
 function SoftwarePanel({ assetId }: { assetId: number }) {
   const qc = useQueryClient();
@@ -76,18 +13,18 @@ function SoftwarePanel({ assetId }: { assetId: number }) {
 
   // Licencias ya asignadas a este activo
   const { data: assignedData, isLoading: loadingAssigned } = useQuery({
-    queryKey: ["asset-licenses", assetId],
+    queryKey: ["it-license", "asset", assetId],
     queryFn: () => itApi.getLicensesForAsset(assetId).then((r) => r.data.results),
     staleTime: 0,
   });
 
   // Todas las licencias disponibles (para el picker)
   const { data: allData } = useQuery({
-    queryKey: ["all-licenses-picker", search],
+    queryKey: ["it-license", "picker", search],
     queryFn: () =>
       itApi.getAllLicenses({ page_size: 100, search: search || undefined }).then((r) => r.data.results),
     enabled: showPicker,
-    staleTime: 15_000,
+    staleTime: 0,
   });
 
   const assignedIds = new Set((assignedData ?? []).map((l) => l.id));
@@ -99,22 +36,42 @@ function SoftwarePanel({ assetId }: { assetId: number }) {
 
   const assignMutation = useMutation({
     mutationFn: (licenseId: number) => itApi.assignLicense(licenseId, assetId),
-    onSuccess: (_, licenseId) => {
-      qc.invalidateQueries({ queryKey: ["asset-licenses", assetId] });
-      qc.invalidateQueries({ queryKey: ["it-licenses"] });
-      qc.invalidateQueries({ queryKey: ["all-licenses-picker"] });
-      toast.success("Software asignado. Licencia descontada.");
+    onSuccess: (res) => {
+      // Añade inmediatamente la licencia a la lista asignada SIN esperar refetch
+      qc.setQueryData(
+        ["it-license", "asset", assetId],
+        (old: SoftwareLicense[] | undefined) =>
+          old ? [...old, res.data] : [res.data],
+      );
+      // Elimina del picker (ya no está disponible) y actualiza la tabla global
+      qc.setQueryData(
+        ["it-license", "picker", search],
+        (old: SoftwareLicense[] | undefined) =>
+          old?.filter((l) => l.id !== res.data.id),
+      );
+      qc.invalidateQueries({ queryKey: ["it-license"] });
+      toast.success("Software asignado — licencia descontada.");
     },
     onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Error al asignar"),
   });
 
   const unassignMutation = useMutation({
     mutationFn: (licenseId: number) => itApi.unassignLicense(licenseId, assetId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["asset-licenses", assetId] });
-      qc.invalidateQueries({ queryKey: ["it-licenses"] });
-      qc.invalidateQueries({ queryKey: ["all-licenses-picker"] });
-      toast.success("Software quitado. Licencia liberada.");
+    onSuccess: (res, licenseId) => {
+      // Elimina inmediatamente de la lista asignada SIN esperar refetch
+      qc.setQueryData(
+        ["it-license", "asset", assetId],
+        (old: SoftwareLicense[] | undefined) =>
+          old?.filter((l) => l.id !== licenseId),
+      );
+      // Devuelve la licencia al picker con asientos actualizados
+      qc.setQueryData(
+        ["it-license", "picker", search],
+        (old: SoftwareLicense[] | undefined) =>
+          old ? old.map((l) => (l.id === res.data.id ? res.data : l)) : [res.data],
+      );
+      qc.invalidateQueries({ queryKey: ["it-license"] });
+      toast.success("Software quitado — licencia liberada.");
     },
     onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Error al quitar"),
   });
@@ -273,6 +230,51 @@ function LicenseRow({ license: lic, onRemove, removing }: {
       >
         <Trash2 size={14} />
       </button>
+    </div>
+  );
+}
+
+// ── Select de antivirus desde licencias asignadas al activo ──────────────────
+function AntivirusFromLicenses({
+  assetId,
+  value,
+  onChange,
+}: {
+  assetId: number;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data: licenses = [], isLoading } = useQuery({
+    queryKey: ["it-license", "asset", assetId],
+    queryFn: () => itApi.getLicensesForAsset(assetId).then((r) => r.data.results),
+    staleTime: 0,
+  });
+
+  const label = (l: { software_name: string; version: string }) =>
+    l.version ? `${l.software_name} v${l.version}` : l.software_name;
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Antivirus instalado
+        <span className="text-xs text-gray-400 ml-1 font-normal">— desde software asignado</span>
+      </label>
+      <select
+        className="input-field"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={isLoading}
+      >
+        <option value="">— Sin antivirus —</option>
+        {licenses.map((lic) => (
+          <option key={lic.id} value={label(lic)}>
+            {label(lic)}{lic.is_expired ? " ⚠ Vencida" : ""}
+          </option>
+        ))}
+        {!isLoading && licenses.length === 0 && (
+          <option disabled>Agregue software primero</option>
+        )}
+      </select>
     </div>
   );
 }
@@ -488,20 +490,18 @@ export function ITProfileForm({ profile, onClose }: Props) {
           {/* ── Seguridad ── */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Antivirus instalado
-                <span className="text-xs text-gray-400 ml-1 font-normal">— desde catálogo de licencias</span>
-              </label>
-              <AntivirusSelect
-                value={form.antivirus}
-                onChange={(v) => f("antivirus", v)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Último escaneo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Último escaneo de seguridad</label>
               <input type="date" className="input-field" value={form.last_scan_date}
                 onChange={(e) => f("last_scan_date", e.target.value)} />
             </div>
+            {/* Antivirus: se carga de las licencias asignadas al activo seleccionado */}
+            {(form.asset || (isEditing && profile?.asset)) && (
+              <AntivirusFromLicenses
+                assetId={(isEditing ? profile!.asset : form.asset)!}
+                value={form.antivirus}
+                onChange={(v) => f("antivirus", v)}
+              />
+            )}
           </div>
 
           {/* ── Flags ── */}
@@ -526,10 +526,10 @@ export function ITProfileForm({ profile, onClose }: Props) {
               placeholder="Observaciones técnicas relevantes..." />
           </div>
 
-          {/* ── Software instalado (solo en edición) ── */}
-          {isEditing && profile.asset && (
+          {/* ── Software instalado: visible en edición Y en creación cuando hay activo seleccionado ── */}
+          {(isEditing ? profile?.asset : form.asset) && (
             <div className="border-t border-gray-100 pt-4">
-              <SoftwarePanel assetId={profile.asset} />
+              <SoftwarePanel assetId={(isEditing ? profile!.asset : form.asset)!} />
             </div>
           )}
 

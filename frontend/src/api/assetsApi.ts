@@ -10,8 +10,11 @@ export const assetsApi = {
   getAll: (params?: Record<string, unknown>) =>
     axiosClient.get<PaginatedResponseType<AssetType>>("/assets/", { params }),
 
-  getById: (id: number) =>
-    axiosClient.get<AssetType>(`/assets/${id}/`),
+  getById: (id: number, params?: Record<string, unknown>) =>
+    axiosClient.get<AssetType>(`/assets/${id}/`, { params }),
+
+  reactivate: (id: number, data: { status: string; reason: string }) =>
+    axiosClient.post(`/assets/${id}/reactivate/`, data),
 
   create: (data: AssetFormType) =>
     axiosClient.post<AssetType>("/assets/", data),

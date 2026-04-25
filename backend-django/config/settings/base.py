@@ -163,6 +163,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ─── Node.js — servidor de notificaciones en tiempo real ─────────────────────
+NODE_URL         = config("NODE_URL",         default="http://localhost:4000")
+NODE_JWT_SECRET  = config("NODE_JWT_SECRET",  default=SECRET_KEY)
+
 # ─── Claude AI (Agente OCR de facturas) ──────────────────────────────────────
 ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 

@@ -7,6 +7,8 @@ export interface ITAssetProfile {
   asset_code: string;
   asset_name: string;
   asset_serial_number: string | null;
+  asset_status: string;
+  asset_is_active: boolean;
   hostname: string;
   ip_address: string | null;
   mac_address: string;
@@ -21,6 +23,7 @@ export interface ITAssetProfile {
   last_scan_date: string | null;
   antivirus: string;
   notes: string;
+  software_count: number;
   created_at: string;
   updated_at: string;
 }

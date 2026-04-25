@@ -1,6 +1,6 @@
 export type MovementType =
   | "TRASLADO" | "PRESTAMO" | "DEVOLUCION"
-  | "REASIGNACION" | "INGRESO" | "BAJA";
+  | "REASIGNACION" | "INGRESO" | "BAJA" | "REACTIVACION";
 
 export interface AssetMovementType {
   id: number;

@@ -21,7 +21,7 @@ class ITAssetProfileViewSet(viewsets.ModelViewSet):
     ordering           = ["risk_level", "asset__asset_code"]
 
     def get_queryset(self):
-        return ITAssetProfile.objects.select_related("asset").all()
+        return ITAssetProfile.objects.select_related("asset").prefetch_related("asset__licenses").all()
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

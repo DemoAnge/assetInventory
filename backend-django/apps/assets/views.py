@@ -15,6 +15,7 @@ from rest_framework.response import Response
 
 from apps.audit.models import AuditLog, AuditAction
 from apps.movements.models import AssetMovement, MovementType
+from apps.shared.notifier import notify_role
 from apps.shared.permissions import IsAdmin, IsTI, IsAnyStaff
 from apps.shared.utils import get_client_ip
 from .models import Asset, AssetStatus, Brand, AssetType, AssetModel
@@ -57,16 +58,20 @@ class AssetViewSet(viewsets.ModelViewSet):
     IT_CATEGORIES = ("COMPUTO", "TELECOMUNICACION")
 
     def get_queryset(self):
-        # Si el cliente envía is_active explícitamente, respetarlo;
-        # de lo contrario, mostrar solo activos por defecto.
-        is_active_param = self.request.query_params.get("is_active")
+        params = self.request.query_params
+        any_status   = params.get("any_status") == "true"   # ignora filtro is_active
+        is_active_param = params.get("is_active")
+
         qs = (
             Asset.objects
             .select_related("agency", "department", "area", "custodian", "parent_asset", "it_profile")
             .prefetch_related("components")
         )
-        if is_active_param is None:
-            qs = qs.filter(is_active=True)
+        if not any_status:
+            if is_active_param is None:
+                qs = qs.filter(is_active=True)
+            elif is_active_param.lower() in ("false", "0"):
+                qs = qs.filter(is_active=False)
         # TI solo ve activos de cómputo y telecomunicaciones
         if getattr(self.request.user, "role", None) == "TI":
             qs = qs.filter(category__in=self.IT_CATEGORIES)
@@ -135,6 +140,12 @@ class AssetViewSet(viewsets.ModelViewSet):
             model="Asset", object_id=asset.pk,
             object_code=asset.asset_code, object_name=asset.name,
             module="assets", ip_address=get_client_ip(request),
+        )
+        notify_role(
+            "ADMIN",
+            "Activo dado de baja",
+            f"{asset.asset_code} — {asset.name} fue dado de baja por {request.user.get_full_name() or request.user.email}",
+            type_="warning", module="assets",
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -286,7 +297,79 @@ class AssetViewSet(viewsets.ModelViewSet):
             extra_data={"reason": baja_reason},
             ip_address=get_client_ip(request),
         )
+        notify_role(
+            "ADMIN",
+            "Activo dado de baja",
+            f"{asset.asset_code} — {asset.name}: {baja_reason[:80]}",
+            type_="warning", module="assets",
+        )
         return Response({"detail": f"Activo {asset.asset_code} dado de baja correctamente."})
+
+    # ── POST /assets/{id}/reactivate/ ────────────────────────────────────────
+    @transaction.atomic
+    @action(detail=False, methods=["post"], url_path=r"(?P<pk>[^/.]+)/reactivate")
+    def reactivate(self, request, pk=None):
+        """
+        Reactiva un activo inactivo.
+        Body: { status: str, reason: str (min 10 chars) }
+        El motivo es obligatorio y queda registrado en AuditLog y Movimiento.
+        """
+        from apps.assets.models import AssetStatus
+
+        try:
+            asset = (
+                Asset.objects
+                .select_related("agency", "department", "area", "custodian")
+                .get(pk=pk, is_active=False)
+            )
+        except Asset.DoesNotExist:
+            # Puede que ya esté activo
+            if Asset.objects.filter(pk=pk, is_active=True).exists():
+                return Response({"detail": "El activo ya se encuentra activo."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Activo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get("status", "ACTIVO").strip()
+        reason     = request.data.get("reason", "").strip()
+
+        valid_statuses = [s.value for s in AssetStatus if s != AssetStatus.INACTIVO]
+        if new_status not in valid_statuses:
+            return Response({"detail": f"Estado inválido. Opciones: {', '.join(valid_statuses)}"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(reason) < 10:
+            return Response({"detail": "El motivo debe tener al menos 10 caracteres."}, status=status.HTTP_400_BAD_REQUEST)
+
+        asset.is_active        = True
+        asset.status           = new_status
+        asset.deactivation_date = None
+        asset.save(update_fields=["is_active", "status", "deactivation_date"])
+
+        AssetMovement.objects.create(
+            asset=asset,
+            movement_type=MovementType.REACTIVACION,
+            movement_date=timezone.now().date(),
+            origin_agency=asset.agency,
+            origin_department=asset.department,
+            origin_area=asset.area,
+            origin_custodian=asset.custodian,
+            dest_agency=asset.agency,
+            dest_custodian=asset.custodian,
+            reason=reason,
+            created_by=request.user,
+        )
+        AuditLog.objects.create(
+            user=request.user, action=AuditAction.ASSET_ACTIVATION,
+            model="Asset", object_id=asset.pk,
+            object_code=asset.asset_code, object_name=asset.name,
+            module="assets",
+            extra_data={"reason": reason, "new_status": new_status},
+            ip_address=get_client_ip(request),
+        )
+        notify_role(
+            "ADMIN",
+            "Activo reactivado",
+            f"{asset.asset_code} — {asset.name} volvió al estado '{new_status}'",
+            type_="success", module="assets",
+        )
+        return Response({"detail": f"Activo {asset.asset_code} reactivado con estado '{new_status}'."})
 
     # ── GET /assets/{id}/qr/ ─────────────────────────────────────────────────
     @action(detail=True, methods=["get"], url_path="qr")

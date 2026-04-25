@@ -6,18 +6,26 @@ class ITAssetProfileReadSerializer(serializers.ModelSerializer):
     asset_code          = serializers.CharField(source="asset.asset_code", read_only=True)
     asset_name          = serializers.CharField(source="asset.name", read_only=True)
     asset_serial_number = serializers.CharField(source="asset.serial_number", read_only=True, default=None)
+    asset_status        = serializers.CharField(source="asset.status", read_only=True)
+    asset_is_active     = serializers.BooleanField(source="asset.is_active", read_only=True)
     risk_level_display  = serializers.CharField(source="get_risk_level_display", read_only=True)
+    software_count      = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ITAssetProfile
         fields = [
             "id", "asset", "asset_code", "asset_name", "asset_serial_number",
+            "asset_status", "asset_is_active",
             "hostname", "ip_address", "mac_address",
             "os_name", "os_version", "processor", "ram_gb", "storage_gb",
             "risk_level", "risk_level_display",
             "is_server", "is_network_device",
             "last_scan_date", "antivirus", "notes",
+            "software_count",
         ]
+
+    def get_software_count(self, obj):
+        return obj.asset.licenses.count()
 
 
 class ITAssetProfileWriteSerializer(serializers.ModelSerializer):
