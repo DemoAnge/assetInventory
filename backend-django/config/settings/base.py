@@ -38,11 +38,11 @@ INSTALLED_APPS = [
 ]
 
 # ─── Información del sistema (open source configurable) ──────────────────────
-SYSTEM_NAME        = "SGA-Coop"
+SYSTEM_NAME        = "SGA-C"
 SYSTEM_VERSION     = "1.0.0"
-SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos para Cooperativas. Open source, modular y adaptable a cualquier institución financiera."
+SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos para instituciones financieras. Open source, modular y adaptable a cualquier institución financiera."
 SYSTEM_LICENSE     = "MIT"
-SYSTEM_REPOSITORY  = "https://github.com/tu-org/sga-coop"
+SYSTEM_REPOSITORY  = "https://github.com/DemoAnge/assetInventory"
 SYSTEM_AUTHORS     = ["Equipo de Desarrollo"]
 
 MIDDLEWARE = [

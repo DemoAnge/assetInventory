@@ -16,16 +16,16 @@ from .serializers import (
 
 # ─── Acerca del sistema ───────────────────────────────────────────────────────
 SYSTEM_INFO = {
-    "name":        getattr(django_settings, "SYSTEM_NAME",       "SGA-Coop"),
+    "name":        getattr(django_settings, "SYSTEM_NAME",       "SGA-C"),
     "version":     getattr(django_settings, "SYSTEM_VERSION",    "1.0.0"),
     "description": getattr(django_settings, "SYSTEM_DESCRIPTION",
-        "Sistema de Gestión de Activos para cooperativas. "
+        "Sistema de Gestión de Activos para istituciones financieras. "
         "Open source, autoinstalable y adaptable a cualquier institución."
     ),
     "license":     getattr(django_settings, "SYSTEM_LICENSE",    "MIT"),
     "author":      getattr(django_settings, "SYSTEM_AUTHOR",     "Angel Pilamunga"),
     "year":        getattr(django_settings, "SYSTEM_YEAR",        "2026"),
-    "repository":  getattr(django_settings, "SYSTEM_REPOSITORY", "https://github.com/tu-usuario/sga-coop"),
+    "repository":  getattr(django_settings, "SYSTEM_REPOSITORY", "https://github.com/DemoAnge/assetInventory"),
     "stack": {
         "Backend":    "Django + Django REST Framework",
         "Frontend":   "React + TypeScript + Tailwind CSS",
