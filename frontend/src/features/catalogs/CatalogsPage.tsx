@@ -3,17 +3,19 @@
  * Roles: ADMIN, TI
  */
 import { useState } from "react";
-import { Tag, Cpu, Package } from "lucide-react";
-import { BrandsTab } from "./BrandsTab";
-import { AssetTypesTab } from "./AssetTypesTab";
-import { ModelsTab } from "./ModelsTab";
+import { Tag, Cpu, Package, BookOpen } from "lucide-react";
+import { BrandsTab }        from "./BrandsTab";
+import { AssetTypesTab }    from "./AssetTypesTab";
+import { ModelsTab }        from "./ModelsTab";
+import { AccountCodesTab }  from "./AccountCodesTab";
 
-type TabKey = "brands" | "types" | "models";
+type TabKey = "brands" | "types" | "models" | "accounts";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: "brands", label: "Marcas",           icon: <Tag size={15} /> },
-  { key: "types",  label: "Tipos de activo",  icon: <Cpu size={15} /> },
-  { key: "models", label: "Modelos",           icon: <Package size={15} /> },
+  { key: "brands",   label: "Marcas",            icon: <Tag      size={15} /> },
+  { key: "types",    label: "Tipos de activo",   icon: <Cpu      size={15} /> },
+  { key: "models",   label: "Modelos",            icon: <Package  size={15} /> },
+  { key: "accounts", label: "Cuentas contables",  icon: <BookOpen size={15} /> },
 ];
 
 export default function CatalogsPage() {
@@ -48,9 +50,10 @@ export default function CatalogsPage() {
       </div>
 
       <div>
-        {tab === "brands" && <BrandsTab />}
-        {tab === "types"  && <AssetTypesTab />}
-        {tab === "models" && <ModelsTab />}
+        {tab === "brands"   && <BrandsTab />}
+        {tab === "types"    && <AssetTypesTab />}
+        {tab === "models"   && <ModelsTab />}
+        {tab === "accounts" && <AccountCodesTab />}
       </div>
     </div>
   );

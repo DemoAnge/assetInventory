@@ -312,9 +312,6 @@ export default function LocationsPage() {
   const agencies = agenciesData?.results ?? [];
   const departments = deptsData?.results ?? [];
 
-  // Todas las áreas de todos los departamentos (ya vienen en departments.areas)
-  const allAreas: AreaType[] = departments.flatMap((d) => d.areas);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -17,7 +17,7 @@ import { locationsApi } from "@/api/locationsApi";
 import { usersApi } from "@/api/usersApi";
 import type { AssetType, AssetModelType } from "@/@types/asset.types";
 import type { ITAssetProfileFormData } from "@/@types/it.types";
-import { IT_CATEGORIES, SEPS_CODES, USEFUL_LIFE } from "@/utils/assetConstants";
+import { IT_CATEGORIES, USEFUL_LIFE } from "@/utils/assetConstants";
 import { RISK_LEVELS } from "@/utils/itConstants";
 import toast from "react-hot-toast";
 
@@ -482,7 +482,7 @@ export default function ITAssetFormModal({ onClose }: Props) {
                 </select>
                 {selectedType && (
                   <p className="text-xs text-primary-600 mt-0.5">
-                    Vida útil: {USEFUL_LIFE[selectedType.category]} años · Cuenta: {SEPS_CODES[selectedType.category]}
+                    Vida útil sugerida: {USEFUL_LIFE[selectedType.category]} años
                   </p>
                 )}
               </div>

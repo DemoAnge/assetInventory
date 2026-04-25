@@ -21,8 +21,8 @@ class AssetAdmin(admin.ModelAdmin):
         ("Ubicación", {"fields": ("agency", "department", "area", "custodian")}),
         ("Finanzas (cifrado)", {"fields": ("purchase_value", "residual_value", "current_value", "accumulated_depreciation")}),
         ("Fechas", {"fields": ("purchase_date", "activation_date", "deactivation_date", "warranty_expiry")}),
-        ("Depreciación LORTI", {"fields": ("useful_life_years", "depreciation_rate", "is_fully_depreciated")}),
+        ("Depreciación", {"fields": ("useful_life_years", "depreciation_rate", "is_fully_depreciated")}),
         ("Factura", {"fields": ("invoice_number", "supplier", "invoice_image")}),
-        ("SEPS / QR", {"fields": ("seps_account_code", "qr_uuid")}),
+        ("QR", {"fields": ("qr_uuid",)}),
         ("Flags", {"fields": ("is_active", "is_critical_it", "requires_maintenance")}),
     )

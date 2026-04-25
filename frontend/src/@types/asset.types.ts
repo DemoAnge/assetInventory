@@ -118,10 +118,11 @@ export interface AssetType {
   depreciation_rate: string | null;
   is_fully_depreciated: boolean;
 
-  invoice_number: string;
-  supplier: string;
-  seps_account_code: string;
-  qr_uuid: string;
+  invoice_number:       string;
+  supplier:             string;
+  account_code:         number | null;
+  account_code_display: string | null;
+  qr_uuid:              string;
 
   is_active: boolean;
   is_critical_it: boolean;
@@ -133,6 +134,19 @@ export interface AssetType {
   it_ip_address: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AccountCodeType {
+  id:                 number;
+  code:               string;
+  name:               string;
+  description:        string;
+  category:           AssetCategory | null;
+  category_display:   string | null;
+  useful_life_years:  number | null;
+  depreciation_rate:  string | null;
+  is_active:          boolean;
+  assets_count:       number;
 }
 
 export interface AssetFormType {
@@ -155,10 +169,11 @@ export interface AssetFormType {
   purchase_date: string;
   activation_date?: string;
   warranty_expiry?: string;
-  useful_life_years?: number;
+  useful_life_years?: number | null;
+  depreciation_rate?: string | null;
   invoice_number?: string;
-  supplier?: string;
-  seps_account_code?: string;
+  supplier?:       string;
+  account_code?:   number | null;
   is_critical_it?: boolean;
 }
 

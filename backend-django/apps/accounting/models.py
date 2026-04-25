@@ -122,27 +122,27 @@ class AssetSale(BaseModel):
         if sale.result_type == SaleResultType.GANANCIA:
             return {
                 "date": str(sale.sale_date),
-                "description": f"Venta activo {sale.asset.asset_code} — Ganancia NIC 16",
+                "description": f"Venta activo {sale.asset.asset_code} — Ganancia",
                 "debits": [
                     {"account": "1101", "description": "Efectivo / CxC comprador", "amount": sp},
-                    {"account": f"18{sale.asset.seps_account_code}D", "description": "Dep. acumulada", "amount": dep},
+                    {"account": "DEP", "description": "Dep. acumulada", "amount": dep},
                 ],
                 "credits": [
-                    {"account": sale.asset.seps_account_code, "description": "Activo fijo", "amount": pv},
-                    {"account": "4103", "description": "Ganancia en venta de bienes", "amount": res},
+                    {"account": "ACTIVO", "description": "Activo fijo", "amount": pv},
+                    {"account": "GANANCIA", "description": "Ganancia en venta de bienes", "amount": res},
                 ],
             }
         else:
             return {
                 "date": str(sale.sale_date),
-                "description": f"Venta activo {sale.asset.asset_code} — Pérdida NIC 16",
+                "description": f"Venta activo {sale.asset.asset_code} — Pérdida",
                 "debits": [
                     {"account": "1101", "description": "Efectivo / CxC comprador", "amount": sp},
-                    {"account": f"18{sale.asset.seps_account_code}D", "description": "Dep. acumulada", "amount": dep},
-                    {"account": "5103", "description": "Pérdida en venta de bienes", "amount": abs(res)},
+                    {"account": "DEP", "description": "Dep. acumulada", "amount": dep},
+                    {"account": "PERDIDA", "description": "Pérdida en venta de bienes", "amount": abs(res)},
                 ],
                 "credits": [
-                    {"account": sale.asset.seps_account_code, "description": "Activo fijo", "amount": pv},
+                    {"account": "ACTIVO", "description": "Activo fijo", "amount": pv},
                 ],
             }
 

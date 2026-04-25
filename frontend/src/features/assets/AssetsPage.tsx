@@ -7,7 +7,7 @@ import { useAssets } from "@/hooks/useAssets";
 import { useAuthStore } from "@/store/authStore";
 import { assetsApi } from "@/api/assetsApi";
 import { AssetFormModal } from "./AssetFormModal";
-import type { AssetStatus, AssetCategory, AssetType } from "@/@types/asset.types";
+import type { AssetStatus, AssetCategory } from "@/@types/asset.types";
 
 const STATUS_COLORS: Record<AssetStatus, string> = {
   ACTIVO:        "bg-green-100 text-green-800",
@@ -412,7 +412,7 @@ export default function AssetsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
                       {asset.is_critical_it && (
-                        <AlertTriangle size={14} className="text-orange-500" title="Activo crítico TI" />
+                        <AlertTriangle size={14} className="text-orange-500" aria-label="Activo crítico TI" />
                       )}
                       <Link
                         to={`/assets/${asset.id}`}

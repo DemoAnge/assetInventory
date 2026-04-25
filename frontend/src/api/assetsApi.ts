@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 import type {
   AssetType, AssetFormType, AssetDeactivateFormType, ValidateDeactivationType,
-  AssetTypeType, AssetModelType, BrandType, NextCodeType,
+  AssetTypeType, AssetModelType, BrandType, NextCodeType, AccountCodeType,
 } from "@/@types/asset.types";
 import type { PaginatedResponseType } from "@/@types/common.types";
 
@@ -88,6 +88,19 @@ export const assetsApi = {
 
   deleteAssetModel: (id: number) =>
     axiosClient.delete(`/assets/asset-models/${id}/`),
+
+  // Cuentas contables
+  getAccountCodes: (params?: Record<string, unknown>) =>
+    axiosClient.get<PaginatedResponseType<AccountCodeType>>("/assets/account-codes/", { params }),
+
+  createAccountCode: (data: Partial<AccountCodeType>) =>
+    axiosClient.post<AccountCodeType>("/assets/account-codes/", data),
+
+  updateAccountCode: (id: number, data: Partial<AccountCodeType>) =>
+    axiosClient.patch<AccountCodeType>(`/assets/account-codes/${id}/`, data),
+
+  deleteAccountCode: (id: number) =>
+    axiosClient.delete(`/assets/account-codes/${id}/`),
 
   // Código automático
   nextCode: (assetTypeId: number) =>

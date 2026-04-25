@@ -37,5 +37,6 @@ export interface AuthStateType {
   isAuthenticated: boolean;
   // actions
   setAuth: (user: UserType, access: string, refresh: string) => void;
+  setUser: (user: UserType) => void;
   logout: () => void;
 }

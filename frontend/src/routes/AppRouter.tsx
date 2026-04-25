@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
@@ -19,6 +19,7 @@ const LocationsPage    = lazy(() => import("@/features/locations/LocationsPage")
 const CatalogsPage     = lazy(() => import("@/features/catalogs/CatalogsPage"));
 const UsersPage        = lazy(() => import("@/features/users/UsersPage"));
 const CustodiansPage   = lazy(() => import("@/features/custodians/CustodiansPage"));
+const SettingsPage     = lazy(() => import("@/features/settings/SettingsPage"));
 const UnauthorizedPage = lazy(() => import("@/features/auth/UnauthorizedPage"));
 
 export default function AppRouter() {
@@ -34,6 +35,7 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <DashboardLayout>
+              <Suspense fallback={<div className="flex items-center justify-center h-64 text-gray-400 text-sm">Cargando...</div>}>
               <Routes>
                 <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
                 <Route path="/dashboard"   element={<DashboardPage />} />
@@ -88,17 +90,14 @@ export default function AppRouter() {
                     </RoleGuard>
                   }
                 />
-                <Route
-                  path="/users/*"
-                  element={
-                    <RoleGuard allowedRoles={["ADMIN"]}>
-                      <UsersPage />
-                    </RoleGuard>
-                  }
-                />
+                <Route path="/users/*" element={<UsersPage />} />
+
+                {/* ── Todos los roles autenticados ─────────────────── */}
+                <Route path="/settings/*" element={<SettingsPage />} />
 
                 <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
               </Routes>
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         }

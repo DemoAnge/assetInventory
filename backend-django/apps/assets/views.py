@@ -18,11 +18,12 @@ from apps.movements.models import AssetMovement, MovementType
 from apps.shared.notifier import notify_role
 from apps.shared.permissions import IsAdmin, IsTI, IsAnyStaff
 from apps.shared.utils import get_client_ip
-from .models import Asset, AssetStatus, Brand, AssetType, AssetModel
+from .models import Asset, AssetStatus, Brand, AssetType, AssetModel, AccountCode
 from .serializers import (
     AssetReadSerializer, AssetWriteSerializer,
     ComponentReadSerializer, AssetDeactivateSerializer,
     BrandSerializer, AssetTypeSerializer, AssetModelSerializer,
+    AccountCodeSerializer,
 )
 
 
@@ -515,6 +516,28 @@ class AssetModelViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "brand__name", "asset_type__name"]
     ordering_fields = ["brand__name", "name"]
     ordering = ["brand__name", "name"]
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [IsAuthenticated(), IsAdmin()]
+        return super().get_permissions()
+
+
+class AccountCodeViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de cuentas contables.
+    GET    /api/v1/assets/account-codes/
+    POST   /api/v1/assets/account-codes/
+    PATCH  /api/v1/assets/account-codes/{id}/
+    DELETE /api/v1/assets/account-codes/{id}/
+    """
+    queryset = AccountCode.objects.all()
+    serializer_class = AccountCodeSerializer
+    permission_classes = [IsAuthenticated, IsAnyStaff]
+    filterset_fields = ["is_active", "category"]
+    search_fields = ["code", "name", "description"]
+    ordering_fields = ["code", "name"]
+    ordering = ["code"]
 
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):

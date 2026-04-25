@@ -31,9 +31,10 @@ export function useCreateCustodian() {
       custodiansApi.create(data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.lists() });
-      toast.success("Custodian registered successfully.");
+      qc.invalidateQueries({ queryKey: ["custodians-select"] });
+      toast.success("Custodio registrado correctamente.");
     },
-    onError: () => toast.error("Error registering custodian."),
+    onError: () => toast.error("Error al registrar el custodio."),
   });
 }
 
@@ -45,9 +46,10 @@ export function useUpdateCustodian(id: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });
       qc.invalidateQueries({ queryKey: KEYS.lists() });
-      toast.success("Custodian updated.");
+      qc.invalidateQueries({ queryKey: ["custodians-select"] });
+      toast.success("Custodio actualizado correctamente.");
     },
-    onError: () => toast.error("Error updating custodian."),
+    onError: () => toast.error("Error al actualizar el custodio."),
   });
 }
 
@@ -57,9 +59,10 @@ export function useDeactivateCustodian() {
     mutationFn: (id: number) => custodiansApi.deactivate(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.lists() });
-      toast.success("Custodian deactivated.");
+      qc.invalidateQueries({ queryKey: ["custodians-select"] });
+      toast.success("Custodio desactivado.");
     },
-    onError: () => toast.error("Could not deactivate custodian."),
+    onError: () => toast.error("No se pudo desactivar el custodio."),
   });
 }
 
@@ -69,8 +72,9 @@ export function useActivateCustodian() {
     mutationFn: (id: number) => custodiansApi.activate(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.lists() });
-      toast.success("Custodian reactivated.");
+      qc.invalidateQueries({ queryKey: ["custodians-select"] });
+      toast.success("Custodio reactivado correctamente.");
     },
-    onError: () => toast.error("Error reactivating custodian."),
+    onError: () => toast.error("Error al reactivar el custodio."),
   });
 }

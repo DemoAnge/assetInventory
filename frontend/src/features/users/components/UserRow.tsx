@@ -31,8 +31,8 @@ export function UserRow({ user, onEdit }: Props) {
       </td>
       <td className="px-4 py-3 text-center">
         {user.mfa_enabled
-          ? <Shield size={16} className="text-blue-500 mx-auto" title="MFA activo" />
-          : <ShieldOff size={16} className="text-gray-300 mx-auto" title="Sin MFA" />}
+          ? <Shield size={16} className="text-blue-500 mx-auto" />
+          : <ShieldOff size={16} className="text-gray-300 mx-auto" />}
         {user.mfa_required && !user.mfa_enabled && (
           <span className="text-xs text-orange-500 block">Requerido</span>
         )}

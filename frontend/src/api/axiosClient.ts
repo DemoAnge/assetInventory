@@ -62,7 +62,7 @@ axiosClient.interceptors.response.use(
           refresh: refreshToken,
         });
         const newAccess: string = data.access;
-        setAuth(user!, newAccess, refreshToken, true);
+        setAuth(user!, newAccess, refreshToken);
         processQueue(null, newAccess);
         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
         return axiosClient(originalRequest);

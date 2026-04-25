@@ -23,9 +23,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token["role"] = user.role
-        token["full_name"] = user.get_full_name()
-        token["mfa_enabled"] = user.mfa_enabled
+        token["role"]         = user.role
+        token["full_name"]    = user.get_full_name()
+        token["mfa_enabled"]  = user.mfa_enabled
         token["mfa_required"] = user.mfa_required
         return token
 
@@ -33,7 +33,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 # ── Usuario — Lectura ─────────────────────────────────────────────────────────
 
 class UserReadSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(read_only=True)
+    full_name   = serializers.CharField(read_only=True)
     agency_name = serializers.CharField(source="agency.name", read_only=True, default=None)
 
     class Meta:
@@ -51,7 +51,7 @@ class UserReadSerializer(serializers.ModelSerializer):
 # ── Usuario — Escritura ───────────────────────────────────────────────────────
 
 class UserWriteSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
+    password         = serializers.CharField(write_only=True, required=True)
     confirm_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -84,8 +84,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 # ── Cambio de contraseña ──────────────────────────────────────────────────────
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
+    old_password         = serializers.CharField(required=True)
+    new_password         = serializers.CharField(required=True)
     confirm_new_password = serializers.CharField(required=True)
 
     def validate(self, attrs):
@@ -98,9 +98,8 @@ class ChangePasswordSerializer(serializers.Serializer):
 # ── MFA ───────────────────────────────────────────────────────────────────────
 
 class MfaSetupSerializer(serializers.Serializer):
-    """Respuesta al iniciar la configuración de MFA."""
-    secret = serializers.CharField(read_only=True)
-    qr_code_base64 = serializers.CharField(read_only=True)
+    secret           = serializers.CharField(read_only=True)
+    qr_code_base64   = serializers.CharField(read_only=True)
     provisioning_uri = serializers.CharField(read_only=True)
 
     @staticmethod
@@ -112,25 +111,21 @@ class MfaSetupSerializer(serializers.Serializer):
 
 
 class MfaVerifySerializer(serializers.Serializer):
-    token = serializers.CharField(
-        min_length=6, max_length=6,
-        help_text="Código TOTP de 6 dígitos."
-    )
+    token = serializers.CharField(min_length=6, max_length=6)
 
 
 class MfaDisableSerializer(serializers.Serializer):
-    token = serializers.CharField(min_length=6, max_length=6)
+    token    = serializers.CharField(min_length=6, max_length=6)
     password = serializers.CharField()
 
 
-# ── Login con MFA ─────────────────────────────────────────────────────────────
+# ── Login ─────────────────────────────────────────────────────────────────────
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email    = serializers.EmailField()
     password = serializers.CharField()
 
 
 class MfaLoginSerializer(serializers.Serializer):
-    """Segunda fase del login cuando MFA está activo."""
-    temp_token = serializers.CharField(help_text="Token temporal devuelto en el primer paso.")
-    totp_code = serializers.CharField(min_length=6, max_length=6)
+    temp_token = serializers.CharField()
+    totp_code  = serializers.CharField(min_length=6, max_length=6)

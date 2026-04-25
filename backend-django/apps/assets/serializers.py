@@ -3,10 +3,23 @@ Serializers del módulo de Activos.
 Separados en lectura / escritura según convención del proyecto.
 """
 from rest_framework import serializers
-from .models import Asset, Brand, AssetType, AssetModel
+from .models import Asset, Brand, AssetType, AssetModel, AccountCode
 
 
 # ── Catálogos ─────────────────────────────────────────────────────────────────
+
+class AccountCodeSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    assets_count     = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = AccountCode
+        fields = ["id", "code", "name", "description", "category",
+                  "category_display", "useful_life_years", "depreciation_rate",
+                  "is_active", "assets_count"]
+
+    def get_assets_count(self, obj):
+        return obj.assets.filter(is_active=True).count()
 
 class BrandSerializer(serializers.ModelSerializer):
     models_count = serializers.SerializerMethodField()
@@ -98,6 +111,9 @@ class AssetReadSerializer(serializers.ModelSerializer):
     it_hostname      = serializers.SerializerMethodField()
     it_ip_address    = serializers.SerializerMethodField()
 
+    # Cuenta contable
+    account_code_display = serializers.SerializerMethodField()
+
     # Depreciación
     monthly_depreciation = serializers.SerializerMethodField()
     depreciation_info    = serializers.SerializerMethodField()
@@ -127,8 +143,10 @@ class AssetReadSerializer(serializers.ModelSerializer):
             "is_fully_depreciated",
             # factura
             "invoice_number", "supplier",
-            # SEPS / QR
-            "seps_account_code", "qr_uuid",
+            # cuenta contable
+            "account_code", "account_code_display",
+            # QR
+            "qr_uuid",
             # flags
             "is_active", "is_critical_it", "requires_maintenance",
             # perfil TI inline
@@ -136,6 +154,11 @@ class AssetReadSerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         ]
         read_only_fields = fields
+
+    def get_account_code_display(self, obj):
+        if obj.account_code_id:
+            return str(obj.account_code)
+        return None
 
     def get_monthly_depreciation(self, obj):
         return obj.get_monthly_depreciation()
@@ -182,9 +205,9 @@ class AssetWriteSerializer(serializers.ModelSerializer):
             "agency", "department", "area", "custodian",
             "purchase_value", "residual_value",
             "purchase_date", "activation_date", "warranty_expiry",
-            "useful_life_years",
+            "useful_life_years", "depreciation_rate",
             "invoice_number", "supplier", "invoice_image",
-            "seps_account_code",
+            "account_code",
             "is_critical_it",
         ]
 

@@ -231,7 +231,7 @@ export default function DashboardPage() {
       {/* Resumen NIC 16 (solo ADMIN/CONTABILIDAD) */}
       {isFinance && (
         <div className="card p-5 border border-emerald-100 bg-emerald-50">
-          <h2 className="text-sm font-semibold text-emerald-800 mb-3">Resumen contable (NIC 16 / LORTI Art. 28)</h2>
+          <h2 className="text-sm font-semibold text-emerald-800 mb-3">Resumen contable</h2>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-emerald-600 font-medium">Total activos</p>

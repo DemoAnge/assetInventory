@@ -93,16 +93,6 @@ function ExportCard({ icon, title, description, compliance, color, actions, filt
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const SEPS_ACCOUNTS = [
-  { code: "1801", label: "1801 — Terrenos" },
-  { code: "1802", label: "1802 — Edificios y locales" },
-  { code: "1803", label: "1803 — Maquinaria y equipo" },
-  { code: "1804", label: "1804 — Muebles y enseres" },
-  { code: "1805", label: "1805 — Equipos de cómputo" },
-  { code: "1806", label: "1806 — Vehículos" },
-  { code: "1807", label: "1807 — Equipos de comunicación" },
-  { code: "1899", label: "1899 — Otros activos fijos" },
-];
 
 const MOVEMENT_TYPES = [
   { value: "TRASLADO",     label: "Traslado" },
@@ -149,9 +139,8 @@ export default function ReportsPage() {
   const [invStatus,   setInvStatus]     = useState("");
   const [invAgency,   setInvAgency]     = useState("");
 
-  // SEPS
+  // Contable
   const [sepsAgency,   setSepsAgency]   = useState("");
-  const [sepsAccount,  setSepsAccount]  = useState("");
   const [sepsCategory, setSepsCategory] = useState("");
 
   // Bajas
@@ -189,7 +178,7 @@ export default function ReportsPage() {
         <AlertCircle size={16} className="mt-0.5 shrink-0" />
         <span>
           Los reportes se generan en tiempo real. Los Excel incluyen hoja de resumen + detalle agrupado con
-          subtotales. Los valores monetarios se exportan desencriptados. Aplican normativas LORTI, NIC 16 y SEPS.
+          subtotales. Los valores monetarios se exportan desencriptados.
         </span>
       </div>
 
@@ -199,8 +188,8 @@ export default function ReportsPage() {
         <ExportCard
           icon={<FileText size={22} className="text-blue-500" />}
           title="Inventario de activos"
-          description="Listado completo con código, categoría, estado, marca, modelo, serie, ubicación, custodio, proveedor, garantía y cuenta SEPS."
-          compliance="SEPS / Superintendencia de Bancos"
+          description="Listado completo con código, categoría, estado, marca, modelo, serie, ubicación, custodio, proveedor, garantía y cuenta contable."
+          compliance="Control interno"
           color="border-l-blue-500"
           isLoading={loadingAgencies}
           actions={csvExcel(
@@ -234,36 +223,32 @@ export default function ReportsPage() {
           }
         />
 
-        {/* ── 2. SEPS — Activos fijos ───────────────────────────────────── */}
+        {/* ── 2. Reporte contable ───────────────────────────────────── */}
         <ExportCard
           icon={<Building2 size={22} className="text-purple-500" />}
-          title="Reporte SEPS — Activos fijos"
-          description="Activos fijos agrupados por cuenta contable SEPS (1801–1899) con valores de compra, depreciación acumulada, valor en libros y residual. Excel con hoja resumen + detalle."
-          compliance="SEPS Resolución / Superintendencia de Bancos"
+          title="Reporte contable — Activos fijos"
+          description="Activos fijos agrupados por cuenta contable con valores de compra, depreciación acumulada, valor en libros y residual. Excel con hoja resumen + detalle."
+          compliance="Control interno"
           color="border-l-purple-500"
           isLoading={loadingAgencies}
           actions={csvExcel(
-            () => buildUrl("/reports/export/seps/",       { agency: sepsAgency, account: sepsAccount, category: sepsCategory }),
-            () => buildUrl("/reports/export/seps/excel/", { agency: sepsAgency, account: sepsAccount, category: sepsCategory }),
-            "reporte_seps_activos_fijos.csv", "reporte_seps_activos_fijos.xlsx",
+            () => buildUrl("/reports/export/seps/",       { agency: sepsAgency, category: sepsCategory }),
+            () => buildUrl("/reports/export/seps/excel/", { agency: sepsAgency, category: sepsCategory }),
+            "reporte_contable_activos_fijos.csv", "reporte_contable_activos_fijos.xlsx",
           )}
           filters={
             <div className="space-y-2">
               <p className="text-xs font-medium text-gray-600">Filtros opcionales:</p>
               <div className="grid grid-cols-2 gap-2">
-                <select className="input text-xs" value={sepsAccount} onChange={(e) => { setSepsAccount(e.target.value); setSepsCategory(""); }}>
-                  <option value="">Cuenta SEPS</option>
-                  {SEPS_ACCOUNTS.map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
-                </select>
-                <select className="input text-xs" value={sepsCategory} onChange={(e) => { setSepsCategory(e.target.value); setSepsAccount(""); }}>
+                <select className="input text-xs" value={sepsCategory} onChange={(e) => setSepsCategory(e.target.value)}>
                   <option value="">Categoría</option>
                   {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
+                <select className="input text-xs" value={sepsAgency} onChange={(e) => setSepsAgency(e.target.value)}>
+                  <option value="">Agencia</option>
+                  {agencies.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
               </div>
-              <select className="input text-xs w-full" value={sepsAgency} onChange={(e) => setSepsAgency(e.target.value)}>
-                <option value="">Todas las agencias</option>
-                {agencies.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
             </div>
           }
         />
@@ -273,7 +258,7 @@ export default function ReportsPage() {
           icon={<Archive size={22} className="text-red-500" />}
           title="Historial de bajas"
           description="Registro completo de activos dados de baja: fecha, código, custodio anterior, motivo, autorizado por y usuario que ejecutó la baja. Excel con filas coloreadas por categoría."
-          compliance="Control interno / SEPS Auditoría"
+          compliance="Control interno"
           color="border-l-red-500"
           isLoading={loadingAgencies}
           actions={csvExcel(
@@ -356,8 +341,8 @@ export default function ReportsPage() {
         <ExportCard
           icon={<TrendingDown size={22} className="text-emerald-600" />}
           title="Tabla de depreciación"
-          description="Depreciación por activo conforme LORTI Art. 28: valor de compra, depreciación anual calculada, acumulada, valor en libros y residual. Excel con resumen por cuenta y detalle con filas rojas para activos totalmente depreciados."
-          compliance="LORTI Art. 28 / NIC 16"
+          description="Depreciación por activo: valor de compra, depreciación anual calculada, acumulada, valor en libros y residual. Excel con resumen por cuenta y detalle con filas rojas para activos totalmente depreciados."
+          compliance="Control interno"
           color="border-l-emerald-600"
           isLoading={loadingAgencies}
           actions={csvExcel(
@@ -391,16 +376,6 @@ export default function ReportsPage() {
 
       </div>
 
-      {/* ── Nota de cumplimiento ─────────────────────────────────────────── */}
-      <div className="card p-4 bg-gray-50 text-xs text-gray-500 space-y-1">
-        <p className="font-medium text-gray-700">Normativa aplicada en los reportes:</p>
-        <ul className="list-disc list-inside space-y-0.5 ml-2">
-          <li><strong>LORTI Art. 28</strong> — Tasas de depreciación por categoría de activo fijo</li>
-          <li><strong>NIC 16</strong> — Reconocimiento y medición de propiedades, planta y equipo</li>
-          <li><strong>SEPS</strong> — Catálogo de cuentas 18xx para cooperativas del segmento financiero</li>
-          <li><strong>Superintendencia de Bancos</strong> — Reporte de activos TI críticos y riesgo operativo</li>
-        </ul>
-      </div>
     </div>
   );
 }

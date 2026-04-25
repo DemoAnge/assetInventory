@@ -23,27 +23,24 @@ User = get_user_model()
 
 
 class LoginRateThrottle(AnonRateThrottle):
-    rate = "100/minute"  # dev: sin restricción real
+    rate  = "100/minute"
     scope = "login"
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 
 class LoginView(generics.GenericAPIView):
-    """
-    Valida email + password y retorna JWT completo.
-    """
     permission_classes = [AllowAny]
-    serializer_class = LoginSerializer
-    throttle_classes = [LoginRateThrottle]
+    serializer_class   = LoginSerializer
+    throttle_classes   = [LoginRateThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"]
+        email    = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
-        ip = get_client_ip(request)
+        ip       = get_client_ip(request)
 
         user = authenticate(request, username=email, password=password)
 
@@ -70,20 +67,19 @@ class LoginView(generics.GenericAPIView):
         user.save(update_fields=["last_login_ip"])
 
         refresh = RefreshToken.for_user(user)
-        refresh["role"] = user.role
+        refresh["role"]      = user.role
         refresh["full_name"] = user.get_full_name()
         return Response({
-            "access": str(refresh.access_token),
+            "access":  str(refresh.access_token),
             "refresh": str(refresh),
-            "user": UserReadSerializer(user).data,
+            "user":    UserReadSerializer(user).data,
         })
-
 
 
 # ── CRUD de Usuarios ──────────────────────────────────────────────────────────
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.select_related("agency").all()
+    queryset           = User.objects.select_related("agency").all()
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get_serializer_class(self):
@@ -113,7 +109,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """Retorna el perfil del usuario autenticado."""
         return Response(UserReadSerializer(request.user).data)
 
     @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
@@ -135,5 +130,3 @@ class UserViewSet(viewsets.ModelViewSet):
             ip_address=get_client_ip(request),
         )
         return Response({"detail": "Contraseña actualizada correctamente."})
-
-

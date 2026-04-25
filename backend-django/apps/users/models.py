@@ -33,11 +33,11 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     # ── Campos de identidad ───────────────────────────────────────────────────
-    email = models.EmailField(unique=True, verbose_name="Correo electrónico")
+    email      = models.EmailField(unique=True, verbose_name="Correo electrónico")
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
-    last_name = models.CharField(max_length=100, verbose_name="Apellidos")
-    cedula = models.CharField(max_length=13, unique=True, blank=True, null=True, verbose_name="Cédula / RUC")
-    phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="Teléfono")
+    last_name  = models.CharField(max_length=100, verbose_name="Apellidos")
+    cedula     = models.CharField(max_length=13, unique=True, blank=True, null=True, verbose_name="Cédula / RUC")
+    phone      = models.CharField(max_length=15, blank=True, null=True, verbose_name="Teléfono")
 
     # ── Rol y permisos ────────────────────────────────────────────────────────
     role = models.CharField(
@@ -48,13 +48,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
 
     # ── Estado ────────────────────────────────────────────────────────────────
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
-    is_staff = models.BooleanField(default=False, verbose_name="Staff")
-    date_joined = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
+    is_active     = models.BooleanField(default=True, verbose_name="Activo")
+    is_staff      = models.BooleanField(default=False, verbose_name="Staff")
+    date_joined   = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
     last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name="Última IP")
 
     # ── MFA ───────────────────────────────────────────────────────────────────
-    mfa_secret = models.CharField(max_length=64, blank=True, null=True, verbose_name="Secreto MFA")
+    mfa_secret  = models.CharField(max_length=64, blank=True, null=True, verbose_name="Secreto MFA")
     mfa_enabled = models.BooleanField(default=False, verbose_name="MFA habilitado")
 
     # ── Relación con agencia ──────────────────────────────────────────────────
@@ -69,7 +69,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD  = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     class Meta:
@@ -85,13 +85,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     # ── MFA helpers ───────────────────────────────────────────────────────────
     def generate_mfa_secret(self) -> str:
-        """Genera y guarda un nuevo secreto TOTP."""
         self.mfa_secret = pyotp.random_base32()
         self.save(update_fields=["mfa_secret"])
         return self.mfa_secret
 
     def get_totp_uri(self) -> str:
-        """Retorna el URI para generar el QR de configuración."""
         from django.conf import settings
         return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
             name=self.email,
@@ -99,15 +97,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         )
 
     def verify_totp(self, token: str) -> bool:
-        """Verifica un token TOTP con ventana de ±1 intervalo."""
         if not self.mfa_secret:
             return False
-        totp = pyotp.TOTP(self.mfa_secret)
-        return totp.verify(token, valid_window=1)
+        return pyotp.TOTP(self.mfa_secret).verify(token, valid_window=1)
 
     @property
     def mfa_required(self) -> bool:
-        """MFA es obligatorio para ADMIN y CONTABILIDAD."""
         return self.role in (Role.ADMIN, Role.CONTABILIDAD)
 
     @property
@@ -117,11 +112,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class LoginAttempt(models.Model):
     """Registro de intentos de login para detección de fuerza bruta."""
-    email = models.EmailField(verbose_name="Email intentado")
-    ip_address = models.GenericIPAddressField(verbose_name="IP")
-    success = models.BooleanField(default=False, verbose_name="Exitoso")
+    email        = models.EmailField(verbose_name="Email intentado")
+    ip_address   = models.GenericIPAddressField(verbose_name="IP")
+    success      = models.BooleanField(default=False, verbose_name="Exitoso")
     attempted_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha intento")
-    user_agent = models.TextField(blank=True, verbose_name="User Agent")
+    user_agent   = models.TextField(blank=True, verbose_name="User Agent")
 
     class Meta:
         verbose_name = "Intento de login"

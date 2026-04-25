@@ -1,50 +1,22 @@
 from rest_framework import serializers
+from apps.locations.models import Agency
 from .models import Custodian
 
 
-def _validate_ecuador_cedula(value: str) -> str:
-    """
-    Valida cédula ecuatoriana:
-      - Exactamente 10 dígitos numéricos
-      - Primeros 2 dígitos = código de provincia (01–24)
-      - Tercer dígito < 6 (persona natural)
-      - Dígito verificador (módulo 10)
-    """
-    if not value.isdigit() or len(value) != 10:
-        raise serializers.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
-
-    province = int(value[:2])
-    if province < 1 or province > 24:
-        raise serializers.ValidationError(
-            "Los dos primeros dígitos no corresponden a una provincia válida de Ecuador (01–24)."
-        )
-
-    if int(value[2]) >= 6:
-        raise serializers.ValidationError("El tercer dígito de la cédula no es válido para persona natural.")
-
-    coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2]
-    total = sum(
-        (d - 9 if d >= 10 else d)
-        for d in (int(value[i]) * coefficients[i] for i in range(9))
-    )
-    check = (10 - (total % 10)) % 10
-    if check != int(value[9]):
-        raise serializers.ValidationError("La cédula ecuatoriana no es válida (dígito verificador incorrecto).")
-
-    return value
-
-
 class CustodianReadSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(read_only=True)
-    # Viene de anotación en el ViewSet — sin N+1
+    full_name    = serializers.CharField(read_only=True)
+    agency_name  = serializers.CharField(source="agency.name", read_only=True, default=None)
+    agency_code  = serializers.CharField(source="agency.code", read_only=True, default=None)
     assets_count = serializers.IntegerField(read_only=True)
 
     class Meta:
-        model = Custodian
+        model  = Custodian
         fields = [
             "id",
             "first_name", "last_name", "full_name",
-            "id_number", "position",
+            "id_number", "phone",
+            "position",
+            "agency", "agency_name", "agency_code",
             "is_active",
             "assets_count",
             "created_at", "updated_at",
@@ -54,14 +26,26 @@ class CustodianReadSerializer(serializers.ModelSerializer):
 
 class CustodianWriteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Custodian
-        fields = ["first_name", "last_name", "id_number", "position"]
+        model  = Custodian
+        fields = ["first_name", "last_name", "id_number", "phone", "position", "agency", "is_active"]
+        extra_kwargs = {
+            "id_number": {"required": False, "allow_null": True, "allow_blank": True},
+            "phone":     {"required": False, "allow_null": True, "allow_blank": True},
+            "agency":    {"required": False, "allow_null": True},
+            "is_active": {"required": False},
+        }
 
     def validate_id_number(self, value):
-        value = _validate_ecuador_cedula(value)
+        if not value:
+            return value
         qs = Custodian.objects.filter(id_number=value)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Ya existe un custodio con esta cédula.")
+            raise serializers.ValidationError("Ya existe un custodio con este número de identificación.")
+        return value
+
+    def validate_agency(self, value):
+        if value and not Agency.objects.filter(pk=value.pk, is_active=True).exists():
+            raise serializers.ValidationError("La agencia seleccionada no está activa.")
         return value

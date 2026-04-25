@@ -4,8 +4,8 @@ Modelo central del sistema con relación auto-referencial 1:N para componentes.
 
 Normalización 2FN/3FN:
   Brand      → catálogo de marcas
-  AssetType  → tipos de activo (Laptop, Servidor, Switch...) con su categoría
-  AssetModel → modelo específico: Brand + AssetType (e.g. Dell Latitude 5540 Laptop)
+  AssetType  → tipos de activo (Laptop, Servidor, Switch...)
+  AssetModel → modelo específico: Brand + AssetType
   Asset      → referencia AssetModel en lugar de repetir marca/modelo como texto
 """
 import uuid
@@ -45,6 +45,43 @@ class ComponentType(models.TextChoices):
 
 # ── Catálogos normalizados ─────────────────────────────────────────────────────
 
+class AccountCode(BaseModel):
+    """
+    Catálogo de cuentas contables configurable por institución.
+    Cada organización define su propio plan de cuentas.
+    """
+    code        = models.CharField(max_length=30, unique=True, verbose_name="Código")
+    name        = models.CharField(max_length=150, verbose_name="Nombre")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    category    = models.CharField(
+        max_length=20, choices=AssetCategory.choices,
+        null=True, blank=True,
+        verbose_name="Categoría sugerida",
+        help_text="Categoría de activo con la que se asocia por defecto (opcional).",
+    )
+    useful_life_years  = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        verbose_name="Vida útil (años)",
+        help_text="Años de vida útil para depreciar activos de esta cuenta.",
+    )
+    depreciation_rate  = models.DecimalField(
+        max_digits=6, decimal_places=2,
+        null=True, blank=True,
+        verbose_name="Tasa de depreciación (%)",
+        help_text="Porcentaje anual de depreciación (ej: 33.33).",
+    )
+    is_active   = models.BooleanField(default=True, verbose_name="Activa")
+
+    class Meta:
+        verbose_name = "Cuenta contable"
+        verbose_name_plural = "Cuentas contables"
+        ordering = ["code"]
+        indexes = [models.Index(fields=["code"], name="idx_account_code")]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
 class Brand(BaseModel):
     """Catálogo de marcas (Dell, HP, Cisco, Toyota…)."""
     name    = models.CharField(max_length=100, unique=True, verbose_name="Marca")
@@ -69,7 +106,7 @@ class AssetType(BaseModel):
     name     = models.CharField(max_length=100, unique=True, verbose_name="Tipo de activo")
     category = models.CharField(
         max_length=20, choices=AssetCategory.choices,
-        verbose_name="Categoría LORTI",
+        verbose_name="Categoría",
     )
     description   = models.TextField(blank=True, verbose_name="Descripción")
     code_prefix   = models.CharField(max_length=10, blank=True, verbose_name="Prefijo de código", help_text="Prefijo para generación automática de código (ej. PC, LAP, IMP)")
@@ -112,7 +149,6 @@ class AssetModel(BaseModel):
 
     @property
     def category(self) -> str:
-        """Categoría LORTI derivada del tipo."""
         return self.asset_type.category if self.asset_type_id else ""
 
 
@@ -125,7 +161,8 @@ class AssetStatus(models.TextChoices):
     ROBADO        = "ROBADO",        "Robado / Siniestro"
 
 
-# Tasas de depreciación LORTI Art. 28
+# Tasas de depreciación por defecto (años de vida útil / tasa anual %)
+# Configurable según la normativa de cada institución.
 DEPRECIATION_RATES = {
     "COMPUTO":          {"years": 3,  "rate": 33.33},
     "VEHICULO":         {"years": 5,  "rate": 20.00},
@@ -136,20 +173,10 @@ DEPRECIATION_RATES = {
     "OTRO":             {"years": 10, "rate": 10.00},
 }
 
-SEPS_ACCOUNTS = {
-    "COMPUTO":          "1805",
-    "VEHICULO":         "1806",
-    "MAQUINARIA":       "1803",
-    "MUEBLE":           "1804",
-    "INMUEBLE":         "1801",
-    "TELECOMUNICACION": "1807",
-    "OTRO":             "1899",
-}
-
 
 class Asset(BaseModel):
     """
-    Activo fijo de la cooperativa.
+    Activo fijo institucional.
     Relación auto-referencial 1:N: un PC (padre) puede tener monitor, teclado, mouse, etc. (hijos).
     Reglas:
       - Movimiento del padre arrastra todos los hijos.
@@ -209,7 +236,7 @@ class Asset(BaseModel):
     deactivation_date = models.DateField(null=True, blank=True, verbose_name="Fecha de baja")
     warranty_expiry   = models.DateField(null=True, blank=True, verbose_name="Vencimiento garantía")
 
-    # ── Depreciación LORTI ────────────────────────────────────────────────────
+    # ── Depreciación ──────────────────────────────────────────────────────────
     useful_life_years    = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Vida útil (años)")
     depreciation_rate    = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Tasa depreciación %")
     is_fully_depreciated = models.BooleanField(default=False, verbose_name="Totalmente depreciado")
@@ -219,8 +246,14 @@ class Asset(BaseModel):
     supplier       = models.CharField(max_length=200, blank=True, verbose_name="Proveedor")
     invoice_image  = models.ImageField(upload_to="invoices/", null=True, blank=True, verbose_name="Imagen factura")
 
-    # ── SEPS / Cuenta contable ────────────────────────────────────────────────
-    seps_account_code = models.CharField(max_length=20, blank=True, verbose_name="Cuenta SEPS (18xx)")
+    # ── Cuenta contable ──────────────────────────────────────────────────────
+    account_code = models.ForeignKey(
+        AccountCode,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="assets",
+        verbose_name="Cuenta contable",
+    )
 
     # ── QR ───────────────────────────────────────────────────────────────────
     qr_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, verbose_name="UUID QR")
@@ -274,6 +307,4 @@ class Asset(BaseModel):
             info = self.depreciation_info
             self.useful_life_years = info["years"]
             self.depreciation_rate = info["rate"]
-        if not self.seps_account_code and self.category:
-            self.seps_account_code = SEPS_ACCOUNTS.get(self.category, "1899")
         super().save(*args, **kwargs)

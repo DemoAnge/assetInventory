@@ -25,26 +25,7 @@ from apps.shared.permissions import IsAnyStaff, IsAdmin
 
 # ── Constantes compartidas ────────────────────────────────────────────────────
 
-SEPS_DESC = {
-    "1801": "Terrenos",
-    "1802": "Edificios y locales",
-    "1803": "Maquinaria y equipo",
-    "1804": "Muebles y enseres",
-    "1805": "Equipos de cómputo",
-    "1806": "Vehículos",
-    "1807": "Equipos de comunicación",
-    "1899": "Otros activos fijos",
-}
-
-CATEGORY_TO_SEPS = {
-    "COMPUTO":          "1805",
-    "VEHICULO":         "1806",
-    "MAQUINARIA":       "1803",
-    "MUEBLE":           "1804",
-    "INMUEBLE":         "1801",
-    "TELECOMUNICACION": "1807",
-    "OTRO":             "1899",
-}
+CATEGORY_TO_SEPS = {}  # mantenido por compatibilidad; cuentas ahora gestionadas por AccountCode
 
 MOVEMENT_TYPE_LABELS = {
     "TRASLADO":     "Traslado",
@@ -115,7 +96,9 @@ def _fmt(value) -> str:
 
 
 def _seps_code(asset) -> str:
-    return asset.seps_account_code or CATEGORY_TO_SEPS.get(asset.category, "1899")
+    if asset.account_code_id:
+        return str(asset.account_code)
+    return ""
 
 
 def _years_elapsed(purchase_date) -> float:
@@ -153,7 +136,7 @@ def _asset_row(asset) -> list:
         custodian,
         str(asset.purchase_date or ""), asset.supplier or "", asset.invoice_number or "",
         asset.useful_life_years or "", str(asset.depreciation_rate or ""),
-        asset.seps_account_code or "",
+        _seps_code(asset),
         str(asset.warranty_expiry or ""),
         "Sí" if asset.requires_maintenance else "No",
         "Sí" if asset.is_critical_it else "No",
@@ -257,7 +240,7 @@ def _depreciation_row(asset) -> list:
 def _inventory_queryset(request):
     qs = Asset.objects.select_related(
         "asset_model__brand", "asset_model__asset_type",
-        "agency", "department", "area", "custodian", "parent_asset",
+        "agency", "department", "area", "custodian", "parent_asset", "account_code",
     ).order_by("asset_code")
     if c := request.query_params.get("category"): qs = qs.filter(category=c)
     if s := request.query_params.get("status"):   qs = qs.filter(status=s)
@@ -267,13 +250,10 @@ def _inventory_queryset(request):
 
 def _seps_queryset(request):
     qs = Asset.objects.select_related(
-        "agency", "department", "area", "custodian", "parent_asset", "asset_model__brand",
-    ).filter(parent_asset__isnull=True).order_by("seps_account_code", "category", "asset_code")
+        "agency", "department", "area", "custodian", "parent_asset", "asset_model__brand", "account_code",
+    ).filter(parent_asset__isnull=True).order_by("category", "asset_code")
     if a := request.query_params.get("agency"):   qs = qs.filter(agency_id=a)
     if c := request.query_params.get("category"): qs = qs.filter(category=c)
-    if acc := request.query_params.get("account"):
-        cats = [cat for cat, s in CATEGORY_TO_SEPS.items() if s == acc]
-        qs = qs.filter(Q(seps_account_code=acc) | Q(category__in=cats))
     return qs
 
 
@@ -316,7 +296,7 @@ def _movements_queryset(request):
 def _depreciation_queryset(request):
     qs = Asset.objects.select_related(
         "agency", "asset_model__brand",
-    ).filter(parent_asset__isnull=True).order_by("seps_account_code", "category", "asset_code")
+    ).filter(parent_asset__isnull=True).order_by("category", "asset_code")
     if c := request.query_params.get("category"): qs = qs.filter(category=c)
     if a := request.query_params.get("agency"):   qs = qs.filter(agency_id=a)
     if y := request.query_params.get("year"):

@@ -98,8 +98,10 @@ export default function CustodiansPage() {
                 <th className="px-4 py-3 text-left font-medium text-gray-500 w-14">#</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Nombre</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Cédula</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Teléfono</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Cargo</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Activos Asignados</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Agencia</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">Activos</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-500">Estado</th>
                 {canWrite && (
                   <th className="px-4 py-3 text-right font-medium text-gray-500">Acciones</th>
@@ -111,8 +113,10 @@ export default function CustodiansPage() {
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-gray-400 font-mono text-xs">{c.id}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">{c.full_name}</td>
-                  <td className="px-4 py-3 font-mono text-gray-700">{c.id_number}</td>
+                  <td className="px-4 py-3 font-mono text-gray-600">{c.id_number ?? <span className="text-gray-300">—</span>}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.phone ?? <span className="text-gray-300">—</span>}</td>
                   <td className="px-4 py-3 text-gray-600">{c.position}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.agency_name ?? <span className="text-gray-300">—</span>}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
                       c.assets_count > 0

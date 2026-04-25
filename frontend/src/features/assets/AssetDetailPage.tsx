@@ -153,7 +153,7 @@ export default function AssetDetailPage() {
                 ["Color",           asset.color || "—"],
                 ["Proveedor",       asset.supplier || "—"],
                 ["N° Factura",      asset.invoice_number || "—"],
-                ["Cuenta SEPS",     asset.seps_account_code || "—"],
+                ["Cuenta contable", asset.account_code_display ?? "—"],
                 ["Fecha de baja",   asset.deactivation_date ?? "—"],
               ].map(([label, value]) => (
                 <div key={label as string}>
@@ -191,7 +191,7 @@ export default function AssetDetailPage() {
           {/* Finanzas y depreciación */}
           {canAccountingView && (
             <div className="card p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">Datos Financieros — LORTI Art. 28</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">Datos Financieros</h2>
               <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 {[
                   ["Valor de compra",  `$${parseFloat(asset.purchase_value).toLocaleString("es-EC", { minimumFractionDigits: 2 })}`],

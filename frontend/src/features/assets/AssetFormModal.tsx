@@ -15,10 +15,40 @@ import { custodiansApi } from "@/api/custodiansApi";
 import { assetsApi } from "@/api/assetsApi";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import type {
-  AssetType, AssetFormType, AssetStatus, AssetModelType, ComponentType,
+  AssetType, AssetFormType, AssetStatus, AssetModelType, ComponentType, AccountCodeType,
 } from "@/@types/asset.types";
-import { SEPS_CODES, USEFUL_LIFE, SEPS_ACCOUNTS } from "@/utils/assetConstants";
+import { USEFUL_LIFE } from "@/utils/assetConstants";
 import toast from "react-hot-toast";
+
+function AccountCodeSelect({
+  value, onChange, onAutoFill,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  onAutoFill?: (ac: AccountCodeType | null) => void;
+}) {
+  const { data } = useQuery({
+    queryKey: ["account-codes-select"],
+    queryFn:  () => assetsApi.getAccountCodes({ is_active: true, page_size: 200 }).then(r => r.data.results),
+    staleTime: 60_000,
+  });
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value ? Number(e.target.value) : null;
+    onChange(id);
+    if (onAutoFill) {
+      const ac = id ? (data?.find(x => x.id === id) ?? null) : null;
+      onAutoFill(ac);
+    }
+  };
+  return (
+    <select className="input-field" value={value ?? ""} onChange={handleChange}>
+      <option value="">— Sin cuenta —</option>
+      {data?.map(ac => (
+        <option key={ac.id} value={ac.id}>{ac.code} — {ac.name}</option>
+      ))}
+    </select>
+  );
+}
 
 interface Props {
   asset?: AssetType;
@@ -35,7 +65,9 @@ const INITIAL: FormState = {
   purchase_value: "", residual_value: "0",
   purchase_date: new Date().toISOString().slice(0, 10),
   activation_date: "", warranty_expiry: "",
-  useful_life_years: 3, seps_account_code: "1805",
+  useful_life_years: 3,
+  depreciation_rate: "33.33",
+  account_code: null,
   invoice_number: "", supplier: "",
   agency: null, department: null, area: null, custodian: null,
   is_critical_it: false,
@@ -50,7 +82,6 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
     if (!asset && parentAsset) return {
       ...INITIAL,
       category: parentAsset.category,
-      seps_account_code: SEPS_CODES[parentAsset.category] ?? "1899",
       useful_life_years: USEFUL_LIFE[parentAsset.category] ?? 5,
       asset_model: parentAsset.asset_model ?? null,
       agency: parentAsset.agency,
@@ -60,26 +91,28 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
       parent_asset: parentAsset.id,
       component_type: "OTRO",
     };
+    const a = asset!;
     return {
-      asset_code: asset.asset_code, name: asset.name,
-      category: asset.category, status: asset.status,
-      asset_model: asset.asset_model ?? null,
-      color: asset.color ?? "", observations: asset.observations ?? "",
-      serial_number: asset.serial_number ?? "",
-      purchase_value: asset.purchase_value,
-      residual_value: asset.residual_value ?? "0",
-      purchase_date: asset.purchase_date,
-      activation_date: asset.activation_date ?? "",
-      warranty_expiry: asset.warranty_expiry ?? "",
-      useful_life_years: asset.useful_life_years ?? 3,
-      seps_account_code: asset.seps_account_code ?? "",
-      invoice_number: asset.invoice_number ?? "",
-      supplier: asset.supplier ?? "",
-      agency: asset.agency, department: asset.department,
-      area: asset.area, custodian: asset.custodian,
-      is_critical_it: asset.is_critical_it,
-      parent_asset: asset.parent_asset ?? null,
-      component_type: asset.component_type ?? null,
+      asset_code: a.asset_code, name: a.name,
+      category: a.category, status: a.status,
+      asset_model: a.asset_model ?? null,
+      color: a.color ?? "", observations: a.observations ?? "",
+      serial_number: a.serial_number ?? "",
+      purchase_value: a.purchase_value,
+      residual_value: a.residual_value ?? "0",
+      purchase_date: a.purchase_date,
+      activation_date: a.activation_date ?? "",
+      warranty_expiry: a.warranty_expiry ?? "",
+      useful_life_years: a.useful_life_years ?? 3,
+      depreciation_rate: a.depreciation_rate ?? null,
+      account_code: a.account_code ?? null,
+      invoice_number: a.invoice_number ?? "",
+      supplier: a.supplier ?? "",
+      agency: a.agency, department: a.department,
+      area: a.area, custodian: a.custodian,
+      is_critical_it: a.is_critical_it,
+      parent_asset: a.parent_asset ?? null,
+      component_type: a.component_type ?? null,
     };
   });
 
@@ -239,7 +272,6 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
     setForm(f => ({
       ...f,
       category: tipo.category,
-      seps_account_code: SEPS_CODES[tipo.category] ?? "1899",
       useful_life_years: USEFUL_LIFE[tipo.category] ?? 5,
       // En modo componente conservar marca y modelo del padre; en activo normal limpiar
       ...(isComponent ? {} : { asset_model: null }),
@@ -423,7 +455,7 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
                   </select>
                   {selectedType && (
                     <p className="text-xs text-primary-600 mt-1">
-                      Vida útil: {USEFUL_LIFE[selectedType.category]} años · Cuenta SEPS: {SEPS_CODES[selectedType.category]}
+                      Vida útil sugerida: {USEFUL_LIFE[selectedType.category]} años
                     </p>
                   )}
                 </div>
@@ -679,7 +711,7 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
             {/* ── 5. Datos financieros ── */}
             <section>
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                Datos financieros — LORTI Art. 28
+                Datos financieros
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -754,32 +786,58 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
               </div>
             </section>
 
-            {/* ── 5. Contable / SEPS ── */}
+            {/* ── 5. Depreciación y cuenta contable ── */}
             <section>
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                Contable — SEPS Ecuador
+                Depreciación
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vida útil (años) — LORTI</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vida útil (años)</label>
                   <input
                     type="number" min="1" max="50" className="input-field"
                     value={form.useful_life_years ?? ""}
-                    onChange={e => set("useful_life_years", Number(e.target.value))}
+                    onChange={e => {
+                      const years = e.target.value ? Number(e.target.value) : null;
+                      setForm(f => ({
+                        ...f,
+                        useful_life_years: years ?? undefined,
+                        depreciation_rate: years ? String((100 / years).toFixed(2)) : f.depreciation_rate,
+                      }));
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta SEPS</label>
-                  <select
-                    className="input-field font-mono"
-                    value={form.seps_account_code ?? ""}
-                    onChange={e => set("seps_account_code", e.target.value)}
-                  >
-                    <option value="">— Seleccionar —</option>
-                    {SEPS_ACCOUNTS.map(a => (
-                      <option key={a.value} value={a.value}>{a.label}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tasa de depreciación (%)
+                    <span className="text-xs font-normal text-gray-400 ml-1">(auto-calculada, editable)</span>
+                  </label>
+                  <input
+                    type="number" min="0" max="100" step="0.01" className="input-field"
+                    value={form.depreciation_rate ?? ""}
+                    onChange={e => set("depreciation_rate", e.target.value || null)}
+                    placeholder="Ej: 33.33"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cuenta contable
+                    <span className="text-xs font-normal text-gray-400 ml-1">(opcional)</span>
+                  </label>
+                  <AccountCodeSelect
+                    value={form.account_code ?? null}
+                    onChange={v => set("account_code", v)}
+                    onAutoFill={ac => {
+                      if (ac?.useful_life_years) {
+                        setForm(f => ({
+                          ...f,
+                          useful_life_years: ac.useful_life_years!,
+                          depreciation_rate: ac.depreciation_rate
+                            ?? String((100 / ac.useful_life_years!).toFixed(2)),
+                        }));
+                      }
+                    }}
+                  />
                 </div>
               </div>
             </section>

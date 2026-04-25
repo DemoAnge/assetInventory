@@ -5,10 +5,10 @@ from .models import CustomUser, LoginAttempt
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ["email", "get_full_name", "role", "is_active", "mfa_enabled", "date_joined"]
-    list_filter = ["role", "is_active", "mfa_enabled"]
+    list_display  = ["email", "get_full_name", "role", "is_active", "mfa_enabled", "date_joined"]
+    list_filter   = ["role", "is_active", "mfa_enabled"]
     search_fields = ["email", "first_name", "last_name", "cedula"]
-    ordering = ["email"]
+    ordering      = ["email"]
     readonly_fields = ["date_joined", "last_login", "last_login_ip"]
 
     fieldsets = (
@@ -26,7 +26,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(LoginAttempt)
 class LoginAttemptAdmin(admin.ModelAdmin):
-    list_display = ["email", "ip_address", "success", "attempted_at"]
-    list_filter = ["success"]
+    list_display  = ["email", "ip_address", "success", "attempted_at"]
+    list_filter   = ["success"]
     search_fields = ["email", "ip_address"]
     readonly_fields = ["email", "ip_address", "success", "attempted_at", "user_agent"]

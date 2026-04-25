@@ -17,4 +17,5 @@ export const ROUTES = {
   CUSTODIANS:   "/custodians",
   LOCATIONS:    "/locations",
   USERS:        "/users",
+  SETTINGS:     "/settings",
 } as const;

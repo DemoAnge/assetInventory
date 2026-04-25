@@ -1,6 +1,6 @@
 """
 Módulo TI — Inventario tecnológico, licencias de software, dispositivos de red.
-Cumplimiento: Superintendencia de Bancos — activos críticos TI y riesgo operativo.
+Gestión de activos críticos y niveles de riesgo operativo.
 """
 from django.db import models
 from apps.shared.models import BaseModel
