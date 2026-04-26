@@ -1,78 +1,12 @@
-import { useRef, useState } from "react";
-import { Camera, Trash2, ImagePlus, Save, User } from "lucide-react";
-import { useProfile, useUpdateProfile, useUploadAvatar, useDeleteAvatar, useUploadBackground, useDeleteBackground } from "@/hooks/useSettings";
-
-function ImageUploadZone({
-  label, currentUrl, onUpload, onDelete, isPending, accept = "image/jpeg,image/png,image/webp",
-}: {
-  label: string;
-  currentUrl: string | null;
-  onUpload: (f: File) => void;
-  onDelete: () => void;
-  isPending: boolean;
-  accept?: string;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) onUpload(file);
-    e.target.value = "";
-  }
-
-  return (
-    <div>
-      <p className="text-sm font-medium text-gray-700 mb-2">{label}</p>
-      <div className="relative group w-full h-28 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-        {currentUrl ? (
-          <>
-            <img src={currentUrl} alt={label} className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={isPending}
-                className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-white transition"
-                title="Cambiar imagen"
-              >
-                <ImagePlus size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={isPending}
-                className="p-2 rounded-full bg-white/90 text-red-600 hover:bg-white transition"
-                title="Eliminar imagen"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={isPending}
-            className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary-500 transition"
-          >
-            <ImagePlus size={22} />
-            <span className="text-xs">Subir imagen</span>
-          </button>
-        )}
-      </div>
-      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
-      <p className="text-xs text-gray-400 mt-1">JPG, PNG o WEBP · máx. 5 MB</p>
-    </div>
-  );
-}
+import { useState } from "react";
+import { Camera, Save, User } from "lucide-react";
+import { useProfile, useUpdateProfile, useUploadAvatar, useDeleteAvatar } from "@/hooks/useSettings";
 
 export function ProfileTab() {
   const { data: profile, isLoading } = useProfile();
-  const updateProfile   = useUpdateProfile();
-  const uploadAvatar    = useUploadAvatar();
-  const deleteAvatar    = useDeleteAvatar();
-  const uploadBg        = useUploadBackground();
-  const deleteBg        = useDeleteBackground();
+  const updateProfile = useUpdateProfile();
+  const uploadAvatar  = useUploadAvatar();
+  const deleteAvatar  = useDeleteAvatar();
 
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", cedula: "", phone: "", bio: "", theme: "light" as "light" | "dark" });
   const [initialized, setInitialized] = useState(false);
@@ -107,70 +41,55 @@ export function ProfileTab() {
 
   return (
     <div className="space-y-8">
-      {/* Avatar + Fondo */}
+      {/* Avatar */}
       <div className="card p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
-          <Camera size={16} className="text-primary-500" /> Imágenes
+          <Camera size={16} className="text-primary-500" /> Foto de perfil
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-          {/* Avatar */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Avatar</p>
-            <div className="flex items-center gap-4">
-              <div className="relative group w-20 h-20 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center shrink-0">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={28} className="text-primary-400" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("avatar-input")?.click()}
-                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                >
-                  <Camera size={18} className="text-white" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("avatar-input")?.click()}
-                  className="btn-secondary text-xs py-1.5 px-3"
-                  disabled={uploadAvatar.isPending}
-                >
-                  {uploadAvatar.isPending ? "Subiendo..." : "Cambiar foto"}
-                </button>
-                {profile?.avatar_url && (
-                  <button
-                    type="button"
-                    onClick={() => deleteAvatar.mutate()}
-                    className="text-xs text-red-500 hover:text-red-700 text-left"
-                    disabled={deleteAvatar.isPending}
-                  >
-                    Eliminar foto
-                  </button>
-                )}
-              </div>
-              <input
-                id="avatar-input"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar.mutate(f); e.target.value = ""; }}
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-2">JPG, PNG o WEBP · máx. 5 MB</p>
+        <div className="flex items-center gap-4">
+          <div className="relative group w-20 h-20 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center shrink-0">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User size={28} className="text-primary-400" />
+            )}
+            <button
+              type="button"
+              onClick={() => document.getElementById("avatar-input")?.click()}
+              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            >
+              <Camera size={18} className="text-white" />
+            </button>
           </div>
-
-          {/* Fondo */}
-          <ImageUploadZone
-            label="Imagen de fondo"
-            currentUrl={profile?.background_url ?? null}
-            onUpload={f => uploadBg.mutate(f)}
-            onDelete={() => deleteBg.mutate()}
-            isPending={uploadBg.isPending || deleteBg.isPending}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => document.getElementById("avatar-input")?.click()}
+              className="btn-secondary text-xs py-1.5 px-3"
+              disabled={uploadAvatar.isPending}
+            >
+              {uploadAvatar.isPending ? "Subiendo..." : "Cambiar foto"}
+            </button>
+            {profile?.avatar_url && (
+              <button
+                type="button"
+                onClick={() => deleteAvatar.mutate()}
+                className="text-xs text-red-500 hover:text-red-700 text-left"
+                disabled={deleteAvatar.isPending}
+              >
+                Eliminar foto
+              </button>
+            )}
+          </div>
+          <input
+            id="avatar-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar.mutate(f); e.target.value = ""; }}
           />
         </div>
+        <p className="text-xs text-gray-400 mt-3">JPG, PNG o WEBP · máx. 5 MB</p>
       </div>
 
       {/* Información personal */}
