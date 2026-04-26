@@ -1,0 +1,35 @@
+Django==4.2.13
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.2
+django-encrypted-model-fields==0.6.5
+mysqlclient==2.2.4
+python-decouple==3.8
+Pillow==10.3.0
+pyotp==2.9.0
+qrcode==7.4.2
+cryptography==42.0.8
+
+# PDF generation
+reportlab==4.2.2
+WeasyPrint==62.3
+
+# OCR / AI
+anthropic==0.28.0
+pytesseract==0.3.10
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+
+# Validation / utilities
+phonenumbers==8.13.39
+python-dateutil==2.9.0
+celery==5.4.0
+redis==5.0.6
+
+# Excel export
+openpyxl==3.1.5
+
+# Dev
+ipython==8.25.0
+django-extensions==3.2.3
