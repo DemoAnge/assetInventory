@@ -1,3 +1,4 @@
+<<<<<<< develop-sga
 # SGA-CO — Sistema de Gestión de Activos
 
 ---
@@ -226,4 +227,9 @@ WHERE email = 'admin@sgacop.com';
     └── /users              ← Gestión de usuarios y roles
         └── [ADMIN]
 ```
+
+=======
+# ProyectMS
+Sistema web de gestión de inventarios y activos
+>>>>>>> main
 
