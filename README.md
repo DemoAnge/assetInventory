@@ -4,6 +4,22 @@
 
 Sistema web para registrar, ubicar, mover, mantener y reportar activos institucionales.
 
+---
+
+## Herramientas de desarrollo
+
+| Capa | Tecnología | Versión |
+|---|---|---|
+| Frontend | React + TypeScript + Vite | 18 / 5.2 / 5.3 |
+| Estilos | Tailwind CSS | 3.4 |
+| Formularios | React Hook Form + Zod | 7.52 |
+| Backend API | Django + Django REST Framework | 4.2 / 3.15 |
+| Notificaciones | Node.js + Express + Socket.io | 18 / 4.19 / 4.7 |
+| Base de datos | MySQL | 8.0 |
+| Contenedores | Docker + Docker Compose | latest |
+
+---
+
 ## Arquitectura
 
 ```
@@ -100,3 +116,5 @@ npm run lint
 Dashboard, Activos, TI, Movimientos, Mantenimiento, Reportes, Documentos, Catálogos, Custodios, Ubicaciones y Usuarios.
 
 Roles: `ADMIN`, `TI`, `CONTABILIDAD`, `AUDITOR`.
+
+
