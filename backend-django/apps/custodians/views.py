@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.shared.notifier import notify_role
 from apps.shared.permissions import CanManageCustodians, IsAdmin
 from .models import Custodian
 from .serializers import CustodianReadSerializer, CustodianWriteSerializer
@@ -47,7 +48,10 @@ class CustodianViewSet(viewsets.ModelViewSet):
         return CustodianReadSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        custodian = serializer.save(created_by=self.request.user)
+        message = f"{custodian.full_name} ({custodian.position}) fue agregado al sistema."
+        notify_role("ADMIN", "Custodio registrado", message, type_="info", module="custodians")
+        notify_role("TI", "Custodio registrado", message, type_="info", module="custodians")
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -76,6 +80,19 @@ class CustodianViewSet(viewsets.ModelViewSet):
         custodian.is_active = False
         custodian.updated_by = request.user
         custodian.save(update_fields=["is_active", "updated_by", "updated_at"])
+        assets_count = getattr(custodian, "assets_count", 0) or 0
+        has_assets = assets_count > 0
+        notify_role(
+            "ADMIN",
+            "Custodio desactivado",
+            (
+                f"{custodian.full_name} desactivado con {assets_count} activo(s) asignados."
+                if has_assets
+                else f"{custodian.full_name} desactivado exitosamente."
+            ),
+            type_="warning" if has_assets else "info",
+            module="custodians",
+        )
         return Response({"detail": f"{custodian.full_name} desactivado exitosamente."})
 
     @action(detail=True, methods=["post"], url_path="activate",

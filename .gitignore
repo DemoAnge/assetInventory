@@ -12,6 +12,7 @@ build/
 venv/
 env/
 .venv/
+.pytest_cache/
 *.env
 .env.*
 !.env.example

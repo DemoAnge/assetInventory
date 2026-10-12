@@ -12,6 +12,7 @@ interface ThreatEvent {
   userId?: string;
 }
 
+const MAX_THREAT_LOG = 100;
 const threatLog: ThreatEvent[] = [];
 
 /** Recibe eventos de amenaza desde Django u otros servicios internos. */
@@ -32,6 +33,9 @@ securityRouter.post("/threats", verifyJwt, requireService, (req: Request, res: R
   };
 
   threatLog.push(event);
+  if (threatLog.length > MAX_THREAT_LOG) {
+    threatLog.splice(0, threatLog.length - MAX_THREAT_LOG);
+  }
   logger.warn(`[SECURITY] Amenaza detectada: ${JSON.stringify(event)}`);
 
   // TODO: notificar por WebSocket al dashboard del ADMIN

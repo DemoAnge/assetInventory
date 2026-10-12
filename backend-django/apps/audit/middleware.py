@@ -4,7 +4,11 @@ import logging
 logger = logging.getLogger("apps.audit")
 
 AUDITED_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-EXCLUDED_PATHS = {"/api/v1/auth/token/refresh/", "/admin/"}
+EXCLUDED_PATHS = {
+    "/api/v1/auth/token/refresh/",
+    "/api/v1/health/",
+    "/admin/",
+}
 
 
 class AuditMiddleware:
