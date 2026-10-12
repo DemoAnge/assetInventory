@@ -95,8 +95,8 @@ export function CreateUserForm({ onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-              <input type="password" className="input w-full" {...register("password", { required: true, minLength: 8 })} />
-              {errors.password && <p className="text-red-500 text-xs mt-1">Mínimo 8 caracteres</p>}
+              <input type="password" className="input w-full" {...register("password", { required: true, minLength: 10 })} />
+              {errors.password && <p className="text-red-500 text-xs mt-1">Mínimo 10 caracteres</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña *</label>

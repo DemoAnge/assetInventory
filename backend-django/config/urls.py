@@ -19,8 +19,7 @@ urlpatterns = [
     path("api/v1/reports/",    include("apps.reports.urls")),
     path("api/v1/documents/",  include("apps.documents.urls")),
     path("api/v1/settings/",   include("apps.user_settings.urls")),
-    # apps.accounting / invoice_agent / alerts / compliance: eliminados del API
-    # apps.audit: INSTALLED_APPS lo mantiene (AuditLog interno), pero sin endpoint público
+    # apps.audit: INSTALLED_APPS lo mantiene (AuditLog interno), sin endpoint público
 ]
 
 if settings.DEBUG:

@@ -6,8 +6,6 @@ RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     gcc \
     pkg-config \
-    tesseract-ocr \
-    tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

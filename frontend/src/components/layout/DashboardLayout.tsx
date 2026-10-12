@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, type ReactNode, Suspense } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, Monitor, ArrowLeftRight,
   Wrench, BarChart2, FileText, MapPin,
@@ -46,7 +46,7 @@ function UserAvatar({ firstName = "", lastName = "" }: { firstName?: string; las
   );
 }
 
-export function DashboardLayout({ children }: { children: ReactNode }) {
+export function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
   const { user, logout, refreshToken } = useAuthStore();
@@ -201,7 +201,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         )}
         <main className="flex-1 overflow-y-auto p-6 flex flex-col">
-          <div className="flex-1">{children}</div>
+          <div className="flex-1">
+            <Suspense fallback={<div className="flex items-center justify-center h-64 text-gray-400 text-sm">Cargando...</div>}>
+              <Outlet />
+            </Suspense>
+          </div>
           <footer className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
             © 2026 Angel Pilamunga — MIT License
           </footer>

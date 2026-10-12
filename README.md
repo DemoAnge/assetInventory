@@ -1,6 +1,6 @@
 # SGA-CO — Sistema de Gestión de Activos
 
-**Versión 1.0.2**
+**Versión 1.0.3**
 
 Sistema web para registrar, ubicar, mover, mantener y reportar activos institucionales.
 
