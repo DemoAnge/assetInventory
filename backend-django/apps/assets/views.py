@@ -5,26 +5,21 @@ Implementa todos los endpoints incluyendo componentes 1:N y validación de baja.
 import io
 import qrcode
 import base64
-from django.utils import timezone
-from django.db import transaction
-import re
+from django.db.models import Count, Prefetch, Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.audit.models import AuditLog, AuditAction
-from apps.movements.models import AssetMovement, MovementType
-from apps.shared.notifier import notify_role
-from apps.shared.permissions import IsAdmin, IsTI, IsAnyStaff
+from apps.shared.permissions import IsAnyStaff
 from apps.shared.utils import get_client_ip
-from .models import Asset, AssetStatus, Brand, AssetType, AssetModel, AccountCode
+from .models import Asset
 from .serializers import (
     AssetReadSerializer, AssetWriteSerializer,
     ComponentReadSerializer, AssetDeactivateSerializer,
-    BrandSerializer, AssetTypeSerializer, AssetModelSerializer,
-    AccountCodeSerializer,
 )
+from .services import AssetDomainError, deactivate_asset, reactivate_asset
 
 
 class AssetViewSet(viewsets.ModelViewSet):
@@ -65,8 +60,24 @@ class AssetViewSet(viewsets.ModelViewSet):
 
         qs = (
             Asset.objects
-            .select_related("agency", "department", "area", "custodian", "parent_asset", "it_profile")
-            .prefetch_related("components")
+            .select_related(
+                "agency", "department", "area", "custodian", "parent_asset",
+                "it_profile", "account_code",
+                "asset_model__brand", "asset_model__asset_type",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "components",
+                    queryset=Asset.objects.select_related("asset_model__brand"),
+                )
+            )
+            .annotate(
+                components_count=Count(
+                    "components",
+                    filter=Q(components__is_active=True),
+                    distinct=True,
+                )
+            )
         )
         if not any_status:
             if is_active_param is None:
@@ -104,50 +115,17 @@ class AssetViewSet(viewsets.ModelViewSet):
         )
 
     # ── Baja lógica (DELETE) ──────────────────────────────────────────────────
-    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         """El DELETE hace baja lógica, no elimina el registro físicamente."""
         asset = self.get_object()
-        if asset.components.filter(is_active=True).exists():
-            return Response(
-                {"detail": "No se puede dar de baja un activo con componentes activos."},
-                status=status.HTTP_400_BAD_REQUEST,
+        try:
+            deactivate_asset(
+                asset, request.user,
+                reason="Baja administrativa del activo.",
+                ip_address=get_client_ip(request),
             )
-        baja_date = timezone.now().date()
-        # Capturar ubicación/custodio antes de modificar el activo
-        orig_agency = asset.agency
-        orig_department = asset.department
-        orig_area = asset.area
-        orig_custodian = asset.custodian
-
-        asset.is_active = False
-        asset.status = AssetStatus.INACTIVO
-        asset.deactivation_date = baja_date
-        asset.save(update_fields=["is_active", "status", "deactivation_date"])
-
-        AssetMovement.objects.create(
-            asset=asset,
-            movement_type=MovementType.BAJA,
-            movement_date=baja_date,
-            origin_agency=orig_agency,
-            origin_department=orig_department,
-            origin_area=orig_area,
-            origin_custodian=orig_custodian,
-            reason="Baja administrativa del activo.",
-            created_by=request.user,
-        )
-        AuditLog.objects.create(
-            user=request.user, action=AuditAction.ASSET_DEACTIVATION,
-            model="Asset", object_id=asset.pk,
-            object_code=asset.asset_code, object_name=asset.name,
-            module="assets", ip_address=get_client_ip(request),
-        )
-        notify_role(
-            "ADMIN",
-            "Activo dado de baja",
-            f"{asset.asset_code} — {asset.name} fue dado de baja por {request.user.get_full_name() or request.user.email}",
-            type_="warning", module="assets",
-        )
+        except AssetDomainError as exc:
+            return Response({"detail": exc.message}, status=exc.status_code)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # ── GET /assets/{id}/components/ ─────────────────────────────────────────
@@ -259,55 +237,24 @@ class AssetViewSet(viewsets.ModelViewSet):
         })
 
     # ── POST /assets/{id}/deactivate/ ────────────────────────────────────────
-    @transaction.atomic
     @action(detail=True, methods=["post"], url_path="deactivate")
     def deactivate(self, request, pk=None):
         asset = self.get_object()
         serializer = AssetDeactivateSerializer(data=request.data, context={"asset": asset})
         serializer.is_valid(raise_exception=True)
-        baja_date = serializer.validated_data["deactivation_date"]
-        baja_reason = serializer.validated_data["reason"]
-
-        # Capturar ubicación/custodio antes de modificar el activo
-        orig_agency = asset.agency
-        orig_department = asset.department
-        orig_area = asset.area
-        orig_custodian = asset.custodian
-
-        asset.is_active = False
-        asset.status = AssetStatus.INACTIVO
-        asset.deactivation_date = baja_date
-        asset.save(update_fields=["is_active", "status", "deactivation_date"])
-
-        AssetMovement.objects.create(
-            asset=asset,
-            movement_type=MovementType.BAJA,
-            movement_date=baja_date,
-            origin_agency=orig_agency,
-            origin_department=orig_department,
-            origin_area=orig_area,
-            origin_custodian=orig_custodian,
-            reason=baja_reason,
-            created_by=request.user,
-        )
-        AuditLog.objects.create(
-            user=request.user, action=AuditAction.ASSET_DEACTIVATION,
-            model="Asset", object_id=asset.pk,
-            object_code=asset.asset_code, object_name=asset.name,
-            module="assets",
-            extra_data={"reason": baja_reason},
-            ip_address=get_client_ip(request),
-        )
-        notify_role(
-            "ADMIN",
-            "Activo dado de baja",
-            f"{asset.asset_code} — {asset.name}: {baja_reason[:80]}",
-            type_="warning", module="assets",
-        )
+        try:
+            deactivate_asset(
+                asset, request.user,
+                reason=serializer.validated_data["reason"],
+                deactivation_date=serializer.validated_data["deactivation_date"],
+                ip_address=get_client_ip(request),
+                extra_data={"reason": serializer.validated_data["reason"]},
+            )
+        except AssetDomainError as exc:
+            return Response({"detail": exc.message}, status=exc.status_code)
         return Response({"detail": f"Activo {asset.asset_code} dado de baja correctamente."})
 
     # ── POST /assets/{id}/reactivate/ ────────────────────────────────────────
-    @transaction.atomic
     @action(detail=False, methods=["post"], url_path=r"(?P<pk>[^/.]+)/reactivate")
     def reactivate(self, request, pk=None):
         """
@@ -315,8 +262,6 @@ class AssetViewSet(viewsets.ModelViewSet):
         Body: { status: str, reason: str (min 10 chars) }
         El motivo es obligatorio y queda registrado en AuditLog y Movimiento.
         """
-        from apps.assets.models import AssetStatus
-
         try:
             asset = (
                 Asset.objects
@@ -324,52 +269,21 @@ class AssetViewSet(viewsets.ModelViewSet):
                 .get(pk=pk, is_active=False)
             )
         except Asset.DoesNotExist:
-            # Puede que ya esté activo
             if Asset.objects.filter(pk=pk, is_active=True).exists():
                 return Response({"detail": "El activo ya se encuentra activo."}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"detail": "Activo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
-        new_status = request.data.get("status", "ACTIVO").strip()
-        reason     = request.data.get("reason", "").strip()
-
-        valid_statuses = [s.value for s in AssetStatus if s != AssetStatus.INACTIVO]
-        if new_status not in valid_statuses:
-            return Response({"detail": f"Estado inválido. Opciones: {', '.join(valid_statuses)}"}, status=status.HTTP_400_BAD_REQUEST)
-        if len(reason) < 10:
-            return Response({"detail": "El motivo debe tener al menos 10 caracteres."}, status=status.HTTP_400_BAD_REQUEST)
-
-        asset.is_active        = True
-        asset.status           = new_status
-        asset.deactivation_date = None
-        asset.save(update_fields=["is_active", "status", "deactivation_date"])
-
-        AssetMovement.objects.create(
-            asset=asset,
-            movement_type=MovementType.REACTIVACION,
-            movement_date=timezone.now().date(),
-            origin_agency=asset.agency,
-            origin_department=asset.department,
-            origin_area=asset.area,
-            origin_custodian=asset.custodian,
-            dest_agency=asset.agency,
-            dest_custodian=asset.custodian,
-            reason=reason,
-            created_by=request.user,
-        )
-        AuditLog.objects.create(
-            user=request.user, action=AuditAction.ASSET_ACTIVATION,
-            model="Asset", object_id=asset.pk,
-            object_code=asset.asset_code, object_name=asset.name,
-            module="assets",
-            extra_data={"reason": reason, "new_status": new_status},
-            ip_address=get_client_ip(request),
-        )
-        notify_role(
-            "ADMIN",
-            "Activo reactivado",
-            f"{asset.asset_code} — {asset.name} volvió al estado '{new_status}'",
-            type_="success", module="assets",
-        )
+        new_status = (request.data.get("status") or "ACTIVO").strip()
+        reason = (request.data.get("reason") or "").strip()
+        try:
+            reactivate_asset(
+                asset, request.user,
+                new_status=new_status,
+                reason=reason,
+                ip_address=get_client_ip(request),
+            )
+        except AssetDomainError as exc:
+            return Response({"detail": exc.message}, status=exc.status_code)
         return Response({"detail": f"Activo {asset.asset_code} reactivado con estado '{new_status}'."})
 
     # ── GET /assets/{id}/qr/ ─────────────────────────────────────────────────
@@ -421,125 +335,3 @@ class AssetViewSet(viewsets.ModelViewSet):
             return Response(AssetReadSerializer(asset).data)
         except Asset.DoesNotExist:
             return Response({"detail": "Activo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
-
-
-# ── ViewSets de catálogos normalizados ────────────────────────────────────────
-
-class BrandViewSet(viewsets.ModelViewSet):
-    """
-    CRUD de marcas.
-    GET    /api/v1/assets/brands/
-    POST   /api/v1/assets/brands/
-    PATCH  /api/v1/assets/brands/{id}/
-    DELETE /api/v1/assets/brands/{id}/
-    """
-    queryset = Brand.objects.all()
-    serializer_class = BrandSerializer
-    permission_classes = [IsAuthenticated, IsAnyStaff]
-    search_fields = ["name", "country"]
-    ordering_fields = ["name"]
-    ordering = ["name"]
-
-    def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAuthenticated(), IsAdmin()]
-        return super().get_permissions()
-
-
-class AssetTypeViewSet(viewsets.ModelViewSet):
-    """
-    CRUD de tipos de activo (Laptop, Servidor, Switch...).
-    GET  /api/v1/assets/asset-types/
-    POST /api/v1/assets/asset-types/
-    """
-    queryset = AssetType.objects.all()
-    serializer_class = AssetTypeSerializer
-    permission_classes = [IsAuthenticated, IsAnyStaff]
-    filterset_fields = ["category", "component_type_link"]
-    search_fields = ["name"]
-    ordering_fields = ["category", "name"]
-    ordering = ["category", "name"]
-
-    def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAuthenticated(), IsAdmin()]
-        return super().get_permissions()
-
-    # ── GET /asset-types/{id}/next-code/ ─────────────────────────────────────
-    @action(detail=True, methods=["get"], url_path="next-code")
-    def next_code(self, request, pk=None):
-        """
-        Devuelve el siguiente código libre para el tipo de activo dado.
-        Ejemplo: tipo con prefix "PC" → busca PC001, PC002… y devuelve el primero libre.
-        """
-        asset_type = self.get_object()
-        prefix = asset_type.code_prefix.upper() if asset_type.code_prefix else asset_type.name[:3].upper()
-
-        # Obtener todos los códigos que empiecen con ese prefijo
-        existing = (
-            Asset.objects
-            .filter(asset_code__istartswith=prefix)
-            .values_list("asset_code", flat=True)
-        )
-
-        # Extraer los números usados
-        used_numbers = set()
-        for code in existing:
-            m = re.match(rf"^{re.escape(prefix)}(\d+)$", code, re.IGNORECASE)
-            if m:
-                used_numbers.add(int(m.group(1)))
-
-        # Encontrar el siguiente libre
-        n = 1
-        while n in used_numbers:
-            n += 1
-
-        next_code = f"{prefix}{str(n).zfill(3)}"
-        return Response({
-            "prefix": prefix,
-            "next_code": next_code,
-            "asset_type": asset_type.name,
-            "last_number": n,
-        })
-
-
-class AssetModelViewSet(viewsets.ModelViewSet):
-    """
-    CRUD de modelos de activo (Dell Latitude 5540, HP ProLiant DL380...).
-    GET  /api/v1/assets/asset-models/?brand=1&asset_type=2
-    POST /api/v1/assets/asset-models/
-    """
-    queryset = AssetModel.objects.select_related("brand", "asset_type").all()
-    serializer_class = AssetModelSerializer
-    permission_classes = [IsAuthenticated, IsAnyStaff]
-    filterset_fields = ["brand", "asset_type", "asset_type__category"]
-    search_fields = ["name", "brand__name", "asset_type__name"]
-    ordering_fields = ["brand__name", "name"]
-    ordering = ["brand__name", "name"]
-
-    def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAuthenticated(), IsAdmin()]
-        return super().get_permissions()
-
-
-class AccountCodeViewSet(viewsets.ModelViewSet):
-    """
-    CRUD de cuentas contables.
-    GET    /api/v1/assets/account-codes/
-    POST   /api/v1/assets/account-codes/
-    PATCH  /api/v1/assets/account-codes/{id}/
-    DELETE /api/v1/assets/account-codes/{id}/
-    """
-    queryset = AccountCode.objects.all()
-    serializer_class = AccountCodeSerializer
-    permission_classes = [IsAuthenticated, IsAnyStaff]
-    filterset_fields = ["is_active", "category"]
-    search_fields = ["code", "name", "description"]
-    ordering_fields = ["code", "name"]
-    ordering = ["code"]
-
-    def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAuthenticated(), IsAdmin()]
-        return super().get_permissions()

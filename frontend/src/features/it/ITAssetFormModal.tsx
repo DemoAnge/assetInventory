@@ -16,50 +16,10 @@ import type { SoftwareLicense } from "@/api/itApi";
 import { locationsApi } from "@/api/locationsApi";
 import { usersApi } from "@/api/usersApi";
 import type { AssetType, AssetModelType } from "@/@types/asset.types";
-import type { ITAssetProfileFormData } from "@/@types/it.types";
 import { IT_CATEGORIES, USEFUL_LIFE } from "@/utils/assetConstants";
 import { RISK_LEVELS } from "@/utils/itConstants";
 import toast from "react-hot-toast";
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-interface AssetFormData {
-  asset_code: string;
-  name: string;
-  category: "COMPUTO" | "TELECOMUNICACION";
-  asset_model: number | null;
-  serial_number: string;
-  color: string;
-  observations: string;
-  warranty_expiry: string;
-  agency: number | null;
-  department: number | null;
-  area: number | null;
-  custodian: number | null;
-  is_critical_it: boolean;
-  // Financiero — no se muestra en UI de TI, se completa desde módulo Activos
-  purchase_value: string;
-  purchase_date: string;
-}
-
-const TODAY = new Date().toISOString().slice(0, 10);
-
-const ASSET_INITIAL: AssetFormData = {
-  asset_code: "", name: "", category: "COMPUTO",
-  asset_model: null, serial_number: "", color: "", observations: "",
-  warranty_expiry: "", agency: null, department: null, area: null,
-  custodian: null, is_critical_it: false,
-  // defaults silenciosos — el usuario completa desde módulo Activos
-  purchase_value: "0.00", purchase_date: TODAY,
-};
-
-const IT_INITIAL: Omit<ITAssetProfileFormData, "asset"> = {
-  hostname: "", ip_address: "", mac_address: "",
-  os_name: "", os_version: "", processor: "",
-  ram_gb: undefined, storage_gb: undefined,
-  risk_level: "BAJO", is_server: false, is_network_device: false,
-  last_scan_date: "", antivirus: "", notes: "",
-};
+import { ASSET_INITIAL, IT_INITIAL, type ITAssetFormData } from "./itAssetFormState";
 
 interface Props { onClose: () => void; }
 
@@ -75,7 +35,7 @@ export default function ITAssetFormModal({ onClose }: Props) {
   const [searchDone, setSearchDone] = useState(false);
 
   // ── Formulario activo ──
-  const [assetForm, setAssetForm] = useState<AssetFormData>(ASSET_INITIAL);
+  const [assetForm, setAssetForm] = useState<ITAssetFormData>(ASSET_INITIAL);
   const [selectedCategory, setSelectedCategory] = useState<"COMPUTO" | "TELECOMUNICACION">("COMPUTO");
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
@@ -84,7 +44,7 @@ export default function ITAssetFormModal({ onClose }: Props) {
   const [newBrandName, setNewBrandName] = useState("");
   const [newModelMode, setNewModelMode] = useState(false);
   const [newModelName, setNewModelName] = useState("");
-  const [assetErrors, setAssetErrors] = useState<Partial<Record<keyof AssetFormData, string>>>({});
+  const [assetErrors, setAssetErrors] = useState<Partial<Record<keyof ITAssetFormData, string>>>({});
 
   // ── Formulario IT ──
   const [itForm, setItForm] = useState<Omit<ITAssetProfileFormData, "asset">>(IT_INITIAL);
@@ -183,7 +143,7 @@ export default function ITAssetFormModal({ onClose }: Props) {
   });
 
   // ── Helpers formulario activo ──
-  function setA<K extends keyof AssetFormData>(k: K, v: AssetFormData[K]) {
+  function setA<K extends keyof ITAssetFormData>(k: K, v: ITAssetFormData[K]) {
     setAssetForm(f => ({ ...f, [k]: v }));
     setAssetErrors(e => ({ ...e, [k]: undefined }));
   }
