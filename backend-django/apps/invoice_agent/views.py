@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from apps.shared.permissions import IsAnyStaff
 
 
-EXTRACT_SYSTEM_PROMPT = """Eres un asistente especializado en extraer información de facturas y documentos de compra de activos fijos para una cooperativa ecuatoriana.
+EXTRACT_SYSTEM_PROMPT = """Eres un asistente especializado en extraer información de facturas y documentos de compra de activos fijos.
 
 Analiza la imagen/documento proporcionado y extrae SOLO la información que puedas ver claramente.
 Si un campo no está visible, devuelve null para ese campo.

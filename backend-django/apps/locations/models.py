@@ -7,7 +7,7 @@ from apps.shared.models import BaseModel
 
 
 class Agency(BaseModel):
-    """Agencia o sucursal de la cooperativa."""
+    """Agencia o sucursal de la institución."""
     code = models.CharField(max_length=10, unique=True, verbose_name="Código")
     name = models.CharField(max_length=150, verbose_name="Nombre")
     address = models.TextField(blank=True, verbose_name="Dirección")

@@ -16,10 +16,10 @@ from .serializers import (
 
 # ─── Acerca del sistema ───────────────────────────────────────────────────────
 SYSTEM_INFO = {
-    "name":        getattr(django_settings, "SYSTEM_NAME",       "SGA-C"),
-    "version":     getattr(django_settings, "SYSTEM_VERSION",    "1.0.0"),
+    "name":        getattr(django_settings, "SYSTEM_NAME",       "SGA-CO"),
+    "version":     getattr(django_settings, "SYSTEM_VERSION",    "1.0.1"),
     "description": getattr(django_settings, "SYSTEM_DESCRIPTION",
-        "Sistema de Gestión de Activos para istituciones financieras. "
+        "Sistema de Gestión de Activos. "
         "Open source, autoinstalable y adaptable a cualquier institución."
     ),
     "license":     getattr(django_settings, "SYSTEM_LICENSE",    "MIT"),

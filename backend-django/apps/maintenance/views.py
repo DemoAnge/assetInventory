@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from apps.assets.models import Asset
 from apps.audit.models import AuditLog, AuditAction
-from apps.shared.permissions import IsTI, IsAnyStaff
+from apps.shared.permissions import IsTI
 from apps.shared.utils import get_client_ip
 from apps.shared.notifier import notify_role
 from .models import MaintenanceRecord, MaintenanceStatus, MaintenanceStatusLog, Technician
@@ -47,7 +47,7 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     GET  /maintenance/technicians/
     POST /maintenance/technicians/
     """
-    permission_classes = [IsAuthenticated, IsAnyStaff]
+    permission_classes = [IsAuthenticated, IsTI]
     serializer_class   = TechnicianSerializer
     search_fields      = ["name", "company", "specialty", "email"]
     filterset_fields   = ["is_external", "is_active"]
@@ -58,7 +58,7 @@ class TechnicianViewSet(viewsets.ModelViewSet):
 
 
 class MaintenanceViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAnyStaff]
+    permission_classes = [IsAuthenticated, IsTI]
     filterset_fields   = ["asset", "maintenance_type", "status"]
     search_fields      = ["asset__asset_code", "asset__name", "technician", "work_order"]
     ordering           = ["-scheduled_date"]

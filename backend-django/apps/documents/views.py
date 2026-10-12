@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.audit.models import AuditLog, AuditAction
-from apps.shared.permissions import IsAnyStaff
+from apps.shared.permissions import CanManageDocuments
 from apps.shared.utils import get_client_ip
 from .models import AssetDocument
 from .serializers import AssetDocumentSerializer
@@ -13,7 +13,7 @@ from .serializers import AssetDocumentSerializer
 
 class AssetDocumentViewSet(viewsets.ModelViewSet):
     """CRUD de documentos adjuntos a activos con trazabilidad en audit log."""
-    permission_classes = [IsAuthenticated, IsAnyStaff]
+    permission_classes = [IsAuthenticated, CanManageDocuments]
     parser_classes     = [MultiPartParser, FormParser, JSONParser]
     serializer_class   = AssetDocumentSerializer
     filterset_fields   = ["asset", "document_type"]

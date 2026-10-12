@@ -47,8 +47,8 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur mb-4">
             <Building2 size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Inventario de Activos</h1>
-          <p className="text-primary-200 text-sm mt-1">Sistema de Inventario de Activos</p>
+          <h1 className="text-2xl font-bold text-white">SGA-CO</h1>
+          <p className="text-primary-200 text-sm mt-1">Sistema de Gestión de Activos</p>
         </div>
 
         <div className="card p-8">
@@ -65,7 +65,7 @@ export default function LoginPage() {
                   {...register("email")}
                   type="email"
                   className="input-field pl-9"
-                  placeholder="usuario@cooperativa.com"
+                  placeholder="usuario@empresa.com"
                   autoComplete="email"
                 />
               </div>

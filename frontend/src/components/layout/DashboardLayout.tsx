@@ -3,31 +3,32 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, Monitor, ArrowLeftRight,
   Wrench, BarChart2, FileText, MapPin,
-  Building2, LogOut, ChevronLeft, ChevronRight, User, BookOpen, Settings,
+  Building2, LogOut, ChevronLeft, ChevronRight, User, Users, BookOpen, Settings,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/api/authApi";
 import type { Role } from "@/@types/auth.types";
+import { ROUTES, canViewModule } from "@/routes/appRoutes";
 import toast from "react-hot-toast";
 
 interface NavItemType {
   to: string;
   label: string;
   icon: ReactNode;
-  roles: Role[];
 }
 
 const NAV_ITEMS: NavItemType[] = [
-  { to: "/dashboard",   label: "Dashboard",     icon: <LayoutDashboard size={18} />, roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/assets",      label: "Activos",        icon: <Package size={18} />,         roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/it",          label: "TI",             icon: <Monitor size={18} />,         roles: ["ADMIN","TI"] },
-  { to: "/movements",   label: "Movimientos",    icon: <ArrowLeftRight size={18} />,  roles: ["ADMIN","TI","CONTABILIDAD"] },
-  { to: "/maintenance", label: "Mantenimiento",  icon: <Wrench size={18} />,          roles: ["ADMIN","TI"] },
-  { to: "/reports",     label: "Reportes",       icon: <BarChart2 size={18} />,       roles: ["ADMIN","TI","CONTABILIDAD","AUDITOR"] },
-  { to: "/documents",   label: "Documentos",     icon: <FileText size={18} />,        roles: ["ADMIN","TI","CONTABILIDAD"] },
-  { to: "/catalogs",    label: "Catálogos",      icon: <BookOpen size={18} />,        roles: ["ADMIN","TI"] },
-  { to: "/locations",   label: "Ubicaciones",    icon: <MapPin size={18} />,          roles: ["ADMIN"] },
-  { to: "/users",       label: "Usuarios",       icon: <User size={18} />,            roles: ["ADMIN"] },
+  { to: ROUTES.DASHBOARD,   label: "Dashboard",     icon: <LayoutDashboard size={18} /> },
+  { to: ROUTES.ASSETS,      label: "Activos",        icon: <Package size={18} /> },
+  { to: ROUTES.IT,          label: "TI",             icon: <Monitor size={18} /> },
+  { to: ROUTES.MOVEMENTS,   label: "Movimientos",    icon: <ArrowLeftRight size={18} /> },
+  { to: ROUTES.MAINTENANCE, label: "Mantenimiento",  icon: <Wrench size={18} /> },
+  { to: ROUTES.REPORTS,     label: "Reportes",       icon: <BarChart2 size={18} /> },
+  { to: ROUTES.DOCUMENTS,   label: "Documentos",     icon: <FileText size={18} /> },
+  { to: ROUTES.CATALOGS,    label: "Catálogos",      icon: <BookOpen size={18} /> },
+  { to: ROUTES.CUSTODIANS,  label: "Custodios",      icon: <Users size={18} /> },
+  { to: ROUTES.LOCATIONS,   label: "Ubicaciones",    icon: <MapPin size={18} /> },
+  { to: ROUTES.USERS,       label: "Usuarios",       icon: <User size={18} /> },
 ];
 
 const ROLE_BADGE: Record<Role, string> = {
@@ -75,7 +76,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const visibleItems = NAV_ITEMS.filter(item =>
-    user ? item.roles.includes(user.role) : false
+    user ? canViewModule(user.role, item.to) : false
   );
 
   return (
@@ -89,7 +90,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2">
               <Building2 size={22} className="text-primary-400" />
               <span className="text-sm font-semibold leading-tight">
-                Inventario<br />
+                SGA-CO<br />
                 <span className="text-primary-400">Activos</span>
               </span>
             </div>
@@ -138,7 +139,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               </div>
               <div className="py-1">
                 <NavLink
-                  to="/settings"
+                  to={ROUTES.SETTINGS}
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
