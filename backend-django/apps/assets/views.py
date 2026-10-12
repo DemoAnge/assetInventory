@@ -52,7 +52,7 @@ class AssetViewSet(viewsets.ModelViewSet):
     search_fields       = ["asset_code", "name", "serial_number",
                            "asset_model__brand__name", "asset_model__name",
                            "invoice_number", "supplier"]
-    ordering_fields     = ["asset_code", "name", "purchase_date", "purchase_value", "created_at"]
+    ordering_fields     = ["asset_code", "name", "purchase_date", "created_at"]
     ordering            = ["-created_at"]
 
     # Categorías que competen al módulo TI

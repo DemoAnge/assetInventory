@@ -13,6 +13,8 @@ import { assetsApi } from "@/api/assetsApi";
 import { AssetSearchSelect } from "@/components/shared/AssetSearchSelect";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { AssetFormModal } from "@/features/assets/AssetFormModal";
+import { useAuthStore } from "@/store/authStore";
+import { ROUTES, canWriteModule } from "@/routes/appRoutes";
 import type { MovementFormType, MovementType, AssetMovementType } from "@/@types/movement.types";
 import type { AssetType } from "@/@types/asset.types";
 
@@ -54,7 +56,7 @@ const ASSET_STATUSES = [
 
 // ── Modal de detalles + edición + reactivación ───────────────────────────────
 
-function MovementDetailModal({ movement, onClose }: { movement: AssetMovementType; onClose: () => void }) {
+function MovementDetailModal({ movement, onClose, canWrite }: { movement: AssetMovementType; onClose: () => void; canWrite: boolean }) {
   const qc = useQueryClient();
   const [editMode, setEditMode]     = useState(false);
   const [editReason, setEditReason] = useState(movement.reason);
@@ -110,12 +112,14 @@ function MovementDetailModal({ movement, onClose }: { movement: AssetMovementTyp
             <span className="text-gray-500 text-sm">{movement.movement_date}</span>
           </div>
           <div className="flex items-center gap-2">
+            {canWrite && (
             <button
               onClick={() => { setEditMode((v) => !v); setShowReactivate(false); }}
               className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border transition-colors ${editMode ? "bg-primary-50 border-primary-300 text-primary-700" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
             >
               <Edit2 size={12} /> {editMode ? "Cancelar edición" : "Editar"}
             </button>
+            )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
               <X size={18} />
             </button>
@@ -165,7 +169,7 @@ function MovementDetailModal({ movement, onClose }: { movement: AssetMovementTyp
           </div>
 
           {/* Panel reactivación — visible si el activo está inactivo */}
-          {assetInactive && (
+          {canWrite && assetInactive && (
             <div className="border border-emerald-200 rounded-xl overflow-hidden">
               <button
                 type="button"
@@ -516,6 +520,8 @@ function AssetPreviewPanel({
 // ── Página principal ─────────────────────────────────────────────────────────
 
 export default function MovementsPage() {
+  const { user } = useAuthStore();
+  const canWrite = !!user && canWriteModule(user.role, ROUTES.MOVEMENTS);
   const [tab, setTab] = useState<Tab>("list");
   const [showAddComponent, setShowAddComponent] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<AssetType | null>(null);
@@ -606,10 +612,12 @@ export default function MovementsPage() {
             Traslados, préstamos, reasignaciones y bajas. Los componentes se arrastran automáticamente.
           </p>
         </div>
+        {(canWrite || tab === "new") && (
         <button onClick={() => { setTab(tab === "list" ? "new" : "list"); setPreviewAsset(null); }}
           className="btn-primary flex items-center gap-2">
           {tab === "list" ? <><Plus size={16} /> Nuevo Movimiento</> : "← Volver al listado"}
         </button>
+        )}
       </div>
 
       {/* ── Listado ─────────────────────────────────────────────────────────── */}
@@ -671,7 +679,7 @@ export default function MovementsPage() {
       )}
 
       {/* ── Nuevo movimiento ──────────────────────────────────────────────── */}
-      {tab === "new" && (
+      {tab === "new" && canWrite && (
         /*
          * Grid 1-col (móvil): orden natural → paso 1, panel, paso 2
          * Grid 2-col (lg+):   col-1 filas 1-2 = paso1 + paso2  |  col-2 span-2 = panel
@@ -855,6 +863,7 @@ export default function MovementsPage() {
         <MovementDetailModal
           movement={selectedMovement}
           onClose={() => setSelectedMovement(null)}
+          canWrite={canWrite}
         />
       )}
     </div>

@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/@types/auth.types";
 
 interface RoleGuardProps {
-  allowedRoles: Role[];
+  allowedRoles: readonly Role[];
   children: ReactNode;
   redirectTo?: string;
 }

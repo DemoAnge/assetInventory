@@ -3,6 +3,7 @@ import { User, ShieldCheck, Info, Settings } from "lucide-react";
 import { ProfileTab }    from "./tabs/ProfileTab";
 import { SecurityTab }   from "./tabs/SecurityTab";
 import { SystemInfoTab } from "./tabs/SystemInfoTab";
+import { useAuthStore } from "@/store/authStore";
 
 type TabId = "profile" | "security" | "system";
 
@@ -13,7 +14,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("profile");
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<TabId>(
+    user?.mfa_required && !user.mfa_enabled ? "security" : "profile"
+  );
 
   return (
     <div className="space-y-6">

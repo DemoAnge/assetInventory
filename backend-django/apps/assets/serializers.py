@@ -113,6 +113,10 @@ class AssetReadSerializer(serializers.ModelSerializer):
 
     # Cuenta contable
     account_code_display = serializers.SerializerMethodField()
+    purchase_value = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    residual_value = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    current_value = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True, allow_null=True)
+    accumulated_depreciation = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
     # Depreciación
     monthly_depreciation = serializers.SerializerMethodField()
@@ -191,6 +195,8 @@ class AssetReadSerializer(serializers.ModelSerializer):
 
 class AssetWriteSerializer(serializers.ModelSerializer):
     """Serializer de creación / actualización de activos."""
+    purchase_value = serializers.DecimalField(max_digits=14, decimal_places=2)
+    residual_value = serializers.DecimalField(max_digits=14, decimal_places=2, required=False)
 
     class Meta:
         model = Asset

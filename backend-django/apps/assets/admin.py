@@ -19,7 +19,7 @@ class AssetAdmin(admin.ModelAdmin):
         ("Identificación", {"fields": ("asset_code", "serial_number", "name", "brand", "model_name", "color")}),
         ("Clasificación", {"fields": ("category", "status", "component_type", "parent_asset")}),
         ("Ubicación", {"fields": ("agency", "department", "area", "custodian")}),
-        ("Finanzas (cifrado)", {"fields": ("purchase_value", "residual_value", "current_value", "accumulated_depreciation")}),
+        ("Finanzas", {"fields": ("purchase_value", "residual_value", "current_value", "accumulated_depreciation")}),
         ("Fechas", {"fields": ("purchase_date", "activation_date", "deactivation_date", "warranty_expiry")}),
         ("Depreciación", {"fields": ("useful_life_years", "depreciation_rate", "is_fully_depreciated")}),
         ("Factura", {"fields": ("invoice_number", "supplier", "invoice_image")}),

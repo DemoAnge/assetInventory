@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { verifyJwt } from "./jwtMiddleware.js";
+import { requireService, verifyJwt } from "./jwtMiddleware.js";
 import { logger } from "../utils/logger.js";
 
 export const securityRouter = Router();
@@ -15,7 +15,7 @@ interface ThreatEvent {
 const threatLog: ThreatEvent[] = [];
 
 /** Recibe eventos de amenaza desde Django u otros servicios internos. */
-securityRouter.post("/threats", verifyJwt, (req: Request, res: Response) => {
+securityRouter.post("/threats", verifyJwt, requireService, (req: Request, res: Response) => {
   const { ip, type, detail, userId } = req.body as Partial<ThreatEvent & { userId: string }>;
 
   if (!ip || !type) {
@@ -39,7 +39,7 @@ securityRouter.post("/threats", verifyJwt, (req: Request, res: Response) => {
 });
 
 /** Lista los últimos 100 eventos de amenaza. */
-securityRouter.get("/threats", verifyJwt, (_req: Request, res: Response) => {
+securityRouter.get("/threats", verifyJwt, requireService, (_req: Request, res: Response) => {
   res.json(threatLog.slice(-100).reverse());
 });
 

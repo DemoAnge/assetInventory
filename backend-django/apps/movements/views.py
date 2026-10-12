@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from apps.assets.models import Asset
 from apps.audit.models import AuditLog, AuditAction
-from apps.shared.permissions import IsTI, IsAdmin
+from apps.shared.permissions import CanAccessMovements, IsAdmin
 from apps.shared.utils import get_client_ip
 from apps.shared.notifier import notify_role
 from .models import AssetMovement, MovementType
@@ -19,7 +19,7 @@ from .serializers import MovementReadSerializer, MovementWriteSerializer
 
 
 class AssetMovementViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsTI]
+    permission_classes = [IsAuthenticated, CanAccessMovements]
     filterset_fields   = ["asset", "movement_type", "dest_agency", "origin_agency", "is_cascade"]
     search_fields      = ["asset__asset_code", "asset__name", "document_ref", "reason"]
     ordering           = ["-movement_date", "-created_at"]

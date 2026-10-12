@@ -2,8 +2,7 @@ import { Server as HttpServer } from "http";
 import { Server as SocketIOServer, type Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
-
-const JWT_SECRET = process.env.NODE_JWT_SECRET || "change-me";
+import { userJwtSecret } from "../security-agent/jwtMiddleware.js";
 
 export function setupWebSockets(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
@@ -21,7 +20,7 @@ export function setupWebSockets(httpServer: HttpServer): SocketIOServer {
       return;
     }
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as Record<string, unknown>;
+      const payload = jwt.verify(token, userJwtSecret()) as Record<string, unknown>;
       (socket as Socket & { user: Record<string, unknown> }).user = payload;
       next();
     } catch {

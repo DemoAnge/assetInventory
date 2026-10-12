@@ -25,9 +25,12 @@ export interface LoginRequestType {
 }
 
 export interface LoginResponseType {
-  access: string;
-  refresh: string;
-  user: UserType;
+  access?: string;
+  refresh?: string;
+  user?: UserType;
+  mfa_required?: boolean;
+  temp_token?: string;
+  mfa_setup_required?: boolean;
 }
 
 export interface AuthStateType {

@@ -38,9 +38,9 @@ INSTALLED_APPS = [
 ]
 
 # ─── Información del sistema (open source configurable) ──────────────────────
-SYSTEM_NAME        = "SGA-C"
-SYSTEM_VERSION     = "1.0.0"
-SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos para instituciones financieras. Open source, modular y adaptable a cualquier institución financiera."
+SYSTEM_NAME        = "SGA-CO"
+SYSTEM_VERSION     = "1.0.2"
+SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos. Open source, modular y adaptable a cualquier institución."
 SYSTEM_LICENSE     = "MIT"
 SYSTEM_REPOSITORY  = "https://github.com/DemoAnge/assetInventory"
 SYSTEM_AUTHORS     = ["Equipo de Desarrollo"]
@@ -141,7 +141,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
-        "login": "5/15min",
+        "login": "5/hour",
     },
 }
 
@@ -156,7 +156,7 @@ CORS_ALLOW_CREDENTIALS = True
 FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY")
 
 # ─── MFA ─────────────────────────────────────────────────────────────────────
-MFA_ISSUER_NAME = config("MFA_ISSUER_NAME", default="SGA-Coop")
+MFA_ISSUER_NAME = config("MFA_ISSUER_NAME", default="SGA-CO")
 
 # ─── Internacionalización ─────────────────────────────────────────────────────
 LANGUAGE_CODE = "es-ec"

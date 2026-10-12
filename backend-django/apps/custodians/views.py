@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.shared.permissions import IsAdmin, IsAnyStaff
+from apps.shared.permissions import CanManageCustodians, IsAdmin
 from .models import Custodian
 from .serializers import CustodianReadSerializer, CustodianWriteSerializer
 
@@ -23,7 +23,7 @@ class CustodianViewSet(viewsets.ModelViewSet):
     POST /api/v1/custodians/{id}/deactivate/  → desactivación lógica
     POST /api/v1/custodians/{id}/activate/    → reactivar (solo ADMIN)
     """
-    permission_classes = [IsAuthenticated, IsAnyStaff]
+    permission_classes = [IsAuthenticated, CanManageCustodians]
     filterset_fields   = ["is_active", "agency"]
     search_fields      = ["first_name", "last_name", "id_number", "position", "agency__name"]
     ordering_fields    = ["last_name", "first_name", "position", "agency__name", "created_at"]
