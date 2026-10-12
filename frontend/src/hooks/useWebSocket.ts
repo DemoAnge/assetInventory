@@ -3,7 +3,7 @@ import { io, type Socket } from "socket.io-client";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 
-const NODE_URL = import.meta.env.VITE_NODE_URL || "http://localhost:4000";
+const NODE_URL = import.meta.env.VITE_NODE_URL ?? "http://localhost:4000";
 
 export function useWebSocket() {
   const socketRef = useRef<Socket | null>(null);

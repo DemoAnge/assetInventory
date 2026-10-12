@@ -20,7 +20,7 @@ from .serializers import AuditLogSerializer
 # Módulos visibles por rol (ADMIN y AUDITOR ven todo — sin filtro)
 MODULES_BY_ROLE = {
     "TI":           ["assets", "it_module", "maintenance", "movements"],
-    "CONTABILIDAD": ["assets", "accounting", "movements", "documents"],
+    "CONTABILIDAD": ["assets", "movements", "documents"],
 }
 
 
@@ -45,7 +45,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     Logs de auditoría — solo lectura.
     Visibilidad por rol:
       TI           → assets, it_module, maintenance, movements
-      CONTABILIDAD → assets, accounting, movements, documents
+      CONTABILIDAD → assets, movements, documents
       AUDITOR      → todo
       ADMIN        → todo
     """

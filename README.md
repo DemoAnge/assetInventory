@@ -1,9 +1,8 @@
 # SGA-CO — Sistema de Gestión de Activos
 
-**Versión 1.0.2**
+**Versión 1.0.3**
 
 Sistema web para registrar, ubicar, mover, mantener y reportar activos institucionales.
-# SGA-CO — Sistema de Gestión de Activos
 
 ---
 
@@ -55,11 +54,19 @@ Copia `.env.example` a `.env` y completa los valores locales.
 ./start.sh
 ```
 
-**Docker**
+**Docker (desarrollo)**
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
+
+**Docker (producción local)**
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Sirve el frontend en http://localhost (nginx :80). `/api` y `/media` van a Django; `/socket.io` a Node. Django corre con gunicorn y WhiteNoise.
 
 **Manual (tres terminales)**
 
@@ -87,7 +94,22 @@ npm run dev
 |---|---|
 | Frontend | http://localhost:5173 |
 | Django API | http://localhost:8000/api/v1/ |
+| Django health | http://localhost:8000/api/v1/health/ |
 | Node.js | http://localhost:4000 |
+| Node health | http://localhost:4000/health |
+
+## Tests
+
+```bash
+# Django (sqlite, sin MySQL)
+cd backend-django
+pytest
+
+# Frontend (política de roles)
+cd frontend
+npm test
+npm run lint
+```
 
 ## Módulos
 

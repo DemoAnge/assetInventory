@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AssetViewSet, BrandViewSet, AssetTypeViewSet, AssetModelViewSet, AccountCodeViewSet
+from .catalog_views import AccountCodeViewSet, AssetModelViewSet, AssetTypeViewSet, BrandViewSet
+from .views import AssetViewSet
 
 router = DefaultRouter()
 router.register(r"brands",         BrandViewSet,       basename="brand")

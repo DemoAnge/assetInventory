@@ -25,8 +25,6 @@ from apps.shared.permissions import IsAnyStaff, IsAdmin
 
 # ── Constantes compartidas ────────────────────────────────────────────────────
 
-CATEGORY_TO_SEPS = {}  # mantenido por compatibilidad; cuentas ahora gestionadas por AccountCode
-
 MOVEMENT_TYPE_LABELS = {
     "TRASLADO":     "Traslado",
     "PRESTAMO":     "Préstamo",
@@ -96,9 +94,17 @@ def _fmt(value) -> str:
 
 
 def _seps_code(asset) -> str:
-    if asset.account_code_id:
-        return str(asset.account_code)
+    ac = getattr(asset, "account_code", None)
+    if ac is not None:
+        return ac.code
     return ""
+
+
+def _seps_desc(asset) -> str:
+    ac = getattr(asset, "account_code", None)
+    if ac is not None:
+        return ac.name
+    return "Sin cuenta contable"
 
 
 def _years_elapsed(purchase_date) -> float:
@@ -149,7 +155,7 @@ def _asset_row(asset) -> list:
 def _seps_row(asset) -> list:
     code = _seps_code(asset)
     return [
-        code, SEPS_DESC.get(code, "Otros activos fijos"),
+        code, _seps_desc(asset),
         asset.asset_code, asset.name,
         asset.serial_number or "",
         asset.get_category_display(), asset.get_status_display(),
@@ -217,7 +223,7 @@ def _depreciation_row(asset) -> list:
     years_gone = _years_elapsed(asset.purchase_date)
     dep_annual = _dec(asset.purchase_value) * _dec(asset.depreciation_rate) / Decimal("100")
     return [
-        code, SEPS_DESC.get(code, "Otros activos fijos"),
+        code, _seps_desc(asset),
         asset.asset_code, asset.name,
         asset.serial_number or "",
         asset.get_category_display(), asset.get_status_display(),
@@ -251,7 +257,7 @@ def _inventory_queryset(request):
 def _seps_queryset(request):
     qs = Asset.objects.select_related(
         "agency", "department", "area", "custodian", "parent_asset", "asset_model__brand", "account_code",
-    ).filter(parent_asset__isnull=True).order_by("category", "asset_code")
+    ).filter(parent_asset__isnull=True).order_by("account_code__code", "asset_code")
     if a := request.query_params.get("agency"):   qs = qs.filter(agency_id=a)
     if c := request.query_params.get("category"): qs = qs.filter(category=c)
     return qs
@@ -295,8 +301,8 @@ def _movements_queryset(request):
 
 def _depreciation_queryset(request):
     qs = Asset.objects.select_related(
-        "agency", "asset_model__brand",
-    ).filter(parent_asset__isnull=True).order_by("category", "asset_code")
+        "agency", "asset_model__brand", "account_code",
+    ).filter(parent_asset__isnull=True).order_by("account_code__code", "asset_code")
     if c := request.query_params.get("category"): qs = qs.filter(category=c)
     if a := request.query_params.get("agency"):   qs = qs.filter(agency_id=a)
     if y := request.query_params.get("year"):
@@ -482,22 +488,25 @@ class ExportSEPSCSVView(APIView):
         w.writerow(_SEPS_HEADERS)
 
         current_code = None
+        current_desc = ""
         gt = {k: Decimal(0) for k in ("pv", "ad", "cv", "rv")}
         gg = {k: Decimal(0) for k in gt}
 
-        def _flush(code, totals):
+        def _flush(code, desc, totals):
             blank = [""] * len(_SEPS_HEADERS)
-            blank[1] = f"SUBTOTAL {code} — {SEPS_DESC.get(code, '')}"
+            blank[1] = f"SUBTOTAL {code} — {desc}"
             blank[15] = _fmt(totals["pv"]); blank[16] = _fmt(totals["ad"])
             blank[17] = _fmt(totals["cv"]); blank[18] = _fmt(totals["rv"])
             w.writerow(blank); w.writerow([])
 
         for asset in qs:
             code = _seps_code(asset)
+            desc = _seps_desc(asset)
             if current_code and code != current_code:
-                _flush(current_code, gt)
+                _flush(current_code, current_desc, gt)
                 gt = {k: Decimal(0) for k in gt}
             current_code = code
+            current_desc = desc
             w.writerow(_seps_row(asset))
             for key, field in [("pv", "purchase_value"), ("ad", "accumulated_depreciation"),
                                 ("cv", "current_value"), ("rv", "residual_value")]:
@@ -505,7 +514,7 @@ class ExportSEPSCSVView(APIView):
                 gt[key] += v; gg[key] += v
 
         if current_code:
-            _flush(current_code, gt)
+            _flush(current_code, current_desc, gt)
 
         blank = [""] * len(_SEPS_HEADERS)
         blank[1] = "TOTAL GENERAL"
@@ -540,7 +549,10 @@ class ExportSEPSExcelView(APIView):
         for asset in qs:
             code = _seps_code(asset)
             if code not in grouped:
-                grouped[code] = {"n": 0, "pv": Decimal(0), "ad": Decimal(0), "cv": Decimal(0), "rv": Decimal(0)}
+                grouped[code] = {
+                    "n": 0, "name": _seps_desc(asset),
+                    "pv": Decimal(0), "ad": Decimal(0), "cv": Decimal(0), "rv": Decimal(0),
+                }
             g = grouped[code]
             g["n"] += 1
             g["pv"] += _dec(asset.purchase_value); g["ad"] += _dec(asset.accumulated_depreciation)
@@ -551,7 +563,7 @@ class ExportSEPSExcelView(APIView):
         for code in sorted(grouped):
             g = grouped[code]
             for col_idx, val in enumerate(
-                [code, SEPS_DESC.get(code, "Otros"), g["n"],
+                [code, g["name"], g["n"],
                  float(g["pv"]), float(g["ad"]), float(g["cv"]), float(g["rv"])], 1
             ):
                 cell = ws_sum.cell(row=sr, column=col_idx, value=val)
@@ -583,9 +595,10 @@ class ExportSEPSExcelView(APIView):
 
         def _flush_group(code, buf):
             nonlocal row_idx
+            desc = _seps_desc(buf[0]) if buf else ""
             for col in range(1, N + 1):
                 cell = ws.cell(row=row_idx, column=col,
-                               value=f"  Cuenta {code} — {SEPS_DESC.get(code, '')}" if col == 1 else "")
+                               value=f"  Cuenta {code} — {desc}" if col == 1 else "")
                 cell.fill = st["grp_fill"]; cell.font = st["grp_font"]
                 cell.border = st["cell_border"]; cell.alignment = st["left"]
             ws.row_dimensions[row_idx].height = 18; row_idx += 1
@@ -839,11 +852,12 @@ class ExportDepreciationCSVView(APIView):
 
         gt = {k: Decimal(0) for k in ("pv", "dep_a", "ad", "cv", "rv")}
         current_code = None
+        current_desc = ""
         group_totals = {k: Decimal(0) for k in gt}
 
-        def _flush_dep(code, totals):
+        def _flush_dep(code, desc, totals):
             blank = [""] * len(_DEPRECIATION_HEADERS)
-            blank[1] = f"SUBTOTAL {code} — {SEPS_DESC.get(code, '')}"
+            blank[1] = f"SUBTOTAL {code} — {desc}"
             blank[12] = _fmt(totals["pv"]);   blank[13] = _fmt(totals["dep_a"])
             blank[14] = _fmt(totals["ad"]);   blank[15] = _fmt(totals["cv"])
             blank[16] = _fmt(totals["rv"])
@@ -851,10 +865,12 @@ class ExportDepreciationCSVView(APIView):
 
         for asset in qs:
             code = _seps_code(asset)
+            desc = _seps_desc(asset)
             if current_code and code != current_code:
-                _flush_dep(current_code, group_totals)
+                _flush_dep(current_code, current_desc, group_totals)
                 group_totals = {k: Decimal(0) for k in gt}
             current_code = code
+            current_desc = desc
             w.writerow(_depreciation_row(asset))
             dep_a = _dec(asset.purchase_value) * _dec(asset.depreciation_rate) / Decimal("100")
             group_totals["pv"]    += _dec(asset.purchase_value)
@@ -867,7 +883,7 @@ class ExportDepreciationCSVView(APIView):
             gt["cv"]    += _dec(asset.current_value);   gt["rv"]    += _dec(asset.residual_value)
 
         if current_code:
-            _flush_dep(current_code, group_totals)
+            _flush_dep(current_code, current_desc, group_totals)
 
         blank = [""] * len(_DEPRECIATION_HEADERS)
         blank[1] = "TOTAL GENERAL"
@@ -907,7 +923,8 @@ class ExportDepreciationExcelView(APIView):
             code = _seps_code(asset)
             if code not in grouped_dep:
                 grouped_dep[code] = {
-                    "n": 0, "rates": [], "pv": Decimal(0), "dep_a": Decimal(0),
+                    "n": 0, "name": _seps_desc(asset), "rates": [],
+                    "pv": Decimal(0), "dep_a": Decimal(0),
                     "ad": Decimal(0), "cv": Decimal(0), "rv": Decimal(0), "fully": 0,
                 }
             g = grouped_dep[code]
@@ -926,7 +943,7 @@ class ExportDepreciationExcelView(APIView):
             g = grouped_dep[code]
             avg_rate = round(sum(g["rates"]) / len(g["rates"]), 2) if g["rates"] else 0
             for ci, val in enumerate(
-                [code, SEPS_DESC.get(code, "Otros"), g["n"], avg_rate,
+                [code, g["name"], g["n"], avg_rate,
                  float(g["pv"]), float(g["dep_a"]), float(g["ad"]),
                  float(g["cv"]), float(g["rv"]), g["fully"]], 1
             ):
@@ -964,9 +981,10 @@ class ExportDepreciationExcelView(APIView):
 
         def _flush_dep_xl(code, buf):
             nonlocal row_idx
+            desc = _seps_desc(buf[0]) if buf else ""
             for ci in range(1, N + 1):
                 cell = ws.cell(row=row_idx, column=ci,
-                               value=f"  Cuenta {code} — {SEPS_DESC.get(code, '')}" if ci == 1 else "")
+                               value=f"  Cuenta {code} — {desc}" if ci == 1 else "")
                 cell.fill = st["grp_fill"]; cell.font = st["grp_font"]
                 cell.border = st["cell_border"]; cell.alignment = st["left"]
             ws.row_dimensions[row_idx].height = 18; row_idx += 1

@@ -147,6 +147,10 @@ class MfaLoginView(generics.GenericAPIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset           = User.objects.select_related("agency").all()
     permission_classes = [IsAuthenticated, IsAdmin]
+    filterset_fields   = ["role", "is_active", "agency"]
+    search_fields      = ["email", "first_name", "last_name", "cedula"]
+    ordering_fields    = ["last_name", "first_name", "email", "date_joined"]
+    ordering           = ["last_name", "first_name"]
 
     def get_serializer_class(self):
         if self.action == "create":

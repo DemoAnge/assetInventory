@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 
 # ─── Información del sistema (open source configurable) ──────────────────────
 SYSTEM_NAME        = "SGA-CO"
-SYSTEM_VERSION     = "1.0.2"
+SYSTEM_VERSION     = "1.0.3"
 SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos. Open source, modular y adaptable a cualquier institución."
 SYSTEM_LICENSE     = "MIT"
 SYSTEM_REPOSITORY  = "https://github.com/DemoAnge/assetInventory"
@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.security.middleware.SecurityHeadersMiddleware",
+    "apps.audit.middleware.AuditMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -175,9 +176,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ─── Node.js — servidor de notificaciones en tiempo real ─────────────────────
 NODE_URL         = config("NODE_URL",         default="http://localhost:4000")
 NODE_JWT_SECRET  = config("NODE_JWT_SECRET",  default=SECRET_KEY)
-
-# ─── Claude AI (Agente OCR de facturas) ──────────────────────────────────────
-ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 
 # ─── Email ────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
