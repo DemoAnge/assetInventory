@@ -3,7 +3,7 @@ Módulo Contable — depreciación LORTI, venta de activos, asientos SEPS, NIC 1
 """
 from decimal import Decimal
 from django.db import models
-EncryptedDecimalField = models.DecimalField  # dev fallback
+from apps.shared.fields import EncryptedDecimalField
 from apps.shared.models import BaseModel
 
 

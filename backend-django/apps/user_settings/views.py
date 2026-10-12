@@ -17,7 +17,7 @@ from .serializers import (
 # ─── Acerca del sistema ───────────────────────────────────────────────────────
 SYSTEM_INFO = {
     "name":        getattr(django_settings, "SYSTEM_NAME",       "SGA-CO"),
-    "version":     getattr(django_settings, "SYSTEM_VERSION",    "1.0.1"),
+    "version":     getattr(django_settings, "SYSTEM_VERSION",    "1.0.2"),
     "description": getattr(django_settings, "SYSTEM_DESCRIPTION",
         "Sistema de Gestión de Activos. "
         "Open source, autoinstalable y adaptable a cualquier institución."

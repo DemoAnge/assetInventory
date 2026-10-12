@@ -10,7 +10,7 @@ Normalización 2FN/3FN:
 """
 import uuid
 from django.db import models
-EncryptedDecimalField = models.DecimalField  # dev fallback: producción usa AES-256
+from apps.shared.fields import EncryptedDecimalField
 from apps.shared.models import BaseModel
 
 

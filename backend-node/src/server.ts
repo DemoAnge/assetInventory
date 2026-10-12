@@ -9,6 +9,7 @@ import { setupWebSockets } from "./notifications/websocketServer.js";
 import { securityRouter } from "./security-agent/securityRouter.js";
 import { notificationsRouter } from "./notifications/notificationsRouter.js";
 import { logger } from "./utils/logger.js";
+import { serviceJwtSecret, userJwtSecret } from "./security-agent/jwtMiddleware.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -46,6 +47,14 @@ app.use("/api/notifications", notificationsRouter);
 
 // ── WebSockets ────────────────────────────────────────────────────────────────
 setupWebSockets(httpServer);
+
+try {
+  userJwtSecret();
+  serviceJwtSecret();
+} catch (err) {
+  logger.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+}
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
 const PORT = Number(process.env.NODE_PORT) || 4000;

@@ -9,19 +9,24 @@ class CustomUserAdmin(UserAdmin):
     list_filter   = ["role", "is_active", "mfa_enabled"]
     search_fields = ["email", "first_name", "last_name", "cedula"]
     ordering      = ["email"]
-    readonly_fields = ["date_joined", "last_login", "last_login_ip"]
+    readonly_fields = ["date_joined", "last_login", "last_login_ip", "mfa_enabled"]
+    actions = ["reset_mfa"]
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Información personal", {"fields": ("first_name", "last_name", "cedula", "phone")}),
         ("Rol y agencia", {"fields": ("role", "agency")}),
-        ("MFA", {"fields": ("mfa_enabled", "mfa_secret")}),
+        ("MFA", {"fields": ("mfa_enabled",)}),
         ("Estado", {"fields": ("is_active", "is_staff", "is_superuser")}),
         ("Auditoría", {"fields": ("date_joined", "last_login", "last_login_ip")}),
     )
     add_fieldsets = (
         (None, {"fields": ("email", "password1", "password2", "role", "first_name", "last_name")}),
     )
+
+    @admin.action(description="Reiniciar MFA (el usuario deberá configurarlo de nuevo)")
+    def reset_mfa(self, request, queryset):
+        queryset.update(mfa_enabled=False, mfa_secret=None)
 
 
 @admin.register(LoginAttempt)

@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { verifyJwt } from "../security-agent/jwtMiddleware.js";
+import { requireService, verifyJwt } from "../security-agent/jwtMiddleware.js";
 import { emitToRole, emitToUser } from "./websocketServer.js";
 
 export const notificationsRouter = Router();
@@ -16,7 +16,7 @@ export type NotificationPayloadType = {
  * POST /api/notifications/broadcast
  * Django llama a este endpoint para emitir alertas en tiempo real.
  */
-notificationsRouter.post("/broadcast", verifyJwt, (req: Request, res: Response) => {
+notificationsRouter.post("/broadcast", verifyJwt, requireService, (req: Request, res: Response) => {
   const { role, userId, notification } = req.body as {
     role?: string;
     userId?: string | number;

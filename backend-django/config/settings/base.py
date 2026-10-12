@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 
 # ─── Información del sistema (open source configurable) ──────────────────────
 SYSTEM_NAME        = "SGA-CO"
-SYSTEM_VERSION     = "1.0.1"
+SYSTEM_VERSION     = "1.0.2"
 SYSTEM_DESCRIPTION = "Sistema de Gestión de Activos. Open source, modular y adaptable a cualquier institución."
 SYSTEM_LICENSE     = "MIT"
 SYSTEM_REPOSITORY  = "https://github.com/DemoAnge/assetInventory"
@@ -141,7 +141,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
-        "login": "5/15min",
+        "login": "5/hour",
     },
 }
 
