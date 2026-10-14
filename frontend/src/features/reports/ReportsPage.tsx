@@ -72,11 +72,7 @@ function ExportCard({ icon, title, description, compliance, color, actions, filt
         {actions.map((action) => (
           <button
             key={action.label}
-            className={`flex-1 flex items-center justify-center gap-2 text-sm py-2 px-3 rounded-lg font-medium transition-colors ${
-              action.variant === "primary"
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-            } disabled:opacity-60`}
+            className={`flex-1 ${action.variant === "primary" ? "btn-primary" : "btn-secondary"}`}
             onClick={() => handleExport(action)}
             disabled={!!loading || !!isLoading}
           >
@@ -174,7 +170,7 @@ export default function ReportsPage() {
         <p className="text-gray-500 text-sm mt-1">Exportación de informes en formato CSV o Excel</p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3 text-sm text-blue-700">
+      <div className="flex items-start gap-3 rounded-panel border border-accent/20 bg-accent-soft p-4 text-sm text-accent">
         <AlertCircle size={16} className="mt-0.5 shrink-0" />
         <span>
           Los reportes se generan en tiempo real. Los Excel incluyen hoja de resumen + detalle agrupado con

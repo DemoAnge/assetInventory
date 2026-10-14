@@ -92,7 +92,7 @@ export function CustodianFormModal({ custodian, initialValues, onClose }: Props)
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">

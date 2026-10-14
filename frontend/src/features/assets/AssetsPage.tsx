@@ -59,7 +59,7 @@ function AssetQuickModal({ assetId, onClose }: { assetId: number; onClose: () =>
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-4">
+      <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-xl my-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3 min-w-0">
@@ -145,7 +145,7 @@ function AssetQuickModal({ assetId, onClose }: { assetId: number; onClose: () =>
                 </button>
 
                 {showReactivate && (
-                  <div className="p-4 space-y-3 bg-white">
+                  <div className="p-4 space-y-3 bg-surface">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Nuevo estado *</label>
                       <select

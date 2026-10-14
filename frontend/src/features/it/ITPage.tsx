@@ -395,7 +395,7 @@ export default function ITPage() {
           <button
             key={t.key}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === t.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              tab === t.key ? "bg-surface text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => switchTab(t.key as typeof tab)}
           >
@@ -415,7 +415,7 @@ export default function ITPage() {
             <button
               key={s.key}
               className={`text-sm px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                subTab === s.key ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 text-gray-600 hover:border-blue-400"
+                subTab === s.key ? "bg-brand text-white border-transparent" : "border-line text-ink-muted hover:border-accent"
               }`}
               onClick={() => { setSubTab(s.key as typeof subTab); setPage(1); }}
             >
@@ -434,7 +434,7 @@ export default function ITPage() {
             <button
               key={s.key}
               className={`text-sm px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                subTab === s.key ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 text-gray-600 hover:border-blue-400"
+                subTab === s.key ? "bg-brand text-white border-transparent" : "border-line text-ink-muted hover:border-accent"
               }`}
               onClick={() => { setSubTab(s.key as typeof subTab); setPage(1); }}
             >

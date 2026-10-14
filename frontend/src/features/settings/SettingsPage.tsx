@@ -23,12 +23,12 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary-50 text-primary-600">
+        <div className="rounded-lg bg-accent-soft p-2 text-accent">
           <Settings size={22} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ajustes</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Configura tu perfil y preferencias del sistema</p>
+          <h1 className="page-title">Ajustes</h1>
+          <p className="page-subtitle mt-0.5">Configura tu perfil y preferencias del sistema</p>
         </div>
       </div>
 
@@ -42,8 +42,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left ${
                   activeTab === tab.id
-                    ? "bg-primary-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-brand text-white"
+                    : "text-ink-muted hover:bg-surface-muted"
                 }`}
               >
                 {tab.icon}

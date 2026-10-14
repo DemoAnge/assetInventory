@@ -40,7 +40,7 @@ export default function CustodiansPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary-50 text-primary-600">
+          <div className="rounded-lg bg-accent-soft p-2 text-accent">
             <Users size={22} />
           </div>
           <div>

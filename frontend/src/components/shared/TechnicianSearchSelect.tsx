@@ -82,7 +82,7 @@ export function TechnicianSearchSelect({
       </div>
 
       {open && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
           {isLoading && <div className="px-3 py-2 text-sm text-gray-400">Buscando...</div>}
           {!isLoading && (!data || data.length === 0) && (
             <div className="px-3 py-2 text-sm text-gray-400">Sin coincidencias</div>

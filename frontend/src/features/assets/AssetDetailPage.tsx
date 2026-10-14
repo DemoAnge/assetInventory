@@ -234,7 +234,7 @@ export default function AssetDetailPage() {
               </button>
 
               {showReactivate && (
-                <div className="p-5 space-y-4 bg-white">
+                <div className="p-5 space-y-4 bg-surface">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Nuevo estado *

@@ -26,7 +26,7 @@ function AgencyForm({ agency, onClose }: { agency?: AgencyType; onClose: () => v
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{agency ? "Editar agencia" : "Nueva agencia"}</h2>
           <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
@@ -103,7 +103,7 @@ function DepartmentForm({ dept, agencies, onClose }: { dept?: DepartmentType; ag
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{dept ? "Editar departamento" : "Nuevo departamento"}</h2>
           <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
@@ -168,7 +168,7 @@ function AreaForm({ area, departments, onClose }: { area?: AreaType; departments
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{area ? "Editar área" : "Nueva área"}</h2>
           <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
@@ -264,7 +264,7 @@ function AgencyTree({
           )}
           {agencyDepts.map((dept) => (
             <div key={dept.id}>
-              <div className="flex items-center gap-3 px-8 py-2.5 bg-white hover:bg-gray-50">
+              <div className="flex items-center gap-3 px-8 py-2.5 bg-surface hover:bg-gray-50">
                 <LayoutGrid size={14} className="text-purple-400 shrink-0" />
                 <span className="text-sm text-gray-700 flex-1">{dept.name}</span>
                 <span className="text-xs text-gray-400">{dept.code}</span>

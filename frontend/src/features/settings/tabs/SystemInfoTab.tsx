@@ -26,7 +26,7 @@ export function SystemInfoTab() {
           href={info.repository}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 mt-4 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 transition-colors"
+          className="btn-primary mt-4 gap-2"
         >
           <Github size={15} /> Ver en GitHub <ExternalLink size={12} className="opacity-60" />
         </a>

@@ -157,7 +157,7 @@ export function ModelsTab() {
               <select
                 value={form.brand}
                 onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
-                className="mt-0.5 w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                className="mt-0.5 w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-surface"
               >
                 <option value="">Seleccionar...</option>
                 {brands.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -227,7 +227,7 @@ export function ModelsTab() {
                 {/* Tabla de modelos */}
                 {isExpanded && (
                   <table className="w-full text-sm">
-                    <thead className="bg-white border-b border-gray-100">
+                    <thead className="bg-surface border-b border-gray-100">
                       <tr>
                         <th className="text-left px-6 py-2 text-xs font-semibold text-gray-500">Modelo</th>
                         <th className="w-24" />

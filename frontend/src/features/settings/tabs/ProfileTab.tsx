@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Camera, Save, User } from "lucide-react";
 import { useProfile, useUpdateProfile, useUploadAvatar, useDeleteAvatar } from "@/hooks/useSettings";
+import { useThemeStore, type ThemeMode } from "@/store/themeStore";
 
 export function ProfileTab() {
   const { data: profile, isLoading } = useProfile();
@@ -8,7 +9,9 @@ export function ProfileTab() {
   const uploadAvatar  = useUploadAvatar();
   const deleteAvatar  = useDeleteAvatar();
 
-  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", cedula: "", phone: "", bio: "", theme: "light" as "light" | "dark" });
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", cedula: "", phone: "", bio: "", theme: "light" as ThemeMode });
   const [initialized, setInitialized] = useState(false);
 
   if (profile && !initialized) {
@@ -130,9 +133,17 @@ export function ProfileTab() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
-            <select className="input-field" value={form.theme} onChange={e => setForm(f => ({ ...f, theme: e.target.value as "light" | "dark" }))}>
-              <option value="light">☀️ Claro</option>
-              <option value="dark">🌙 Oscuro</option>
+            <select
+              className="input-field"
+              value={theme}
+              onChange={e => {
+                const next = e.target.value as ThemeMode;
+                setTheme(next);
+                setForm(f => ({ ...f, theme: next }));
+              }}
+            >
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
             </select>
           </div>
         </div>

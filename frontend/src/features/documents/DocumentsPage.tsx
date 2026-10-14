@@ -135,7 +135,7 @@ function UploadModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Subir documento</h2>
           <button type="button" onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>
@@ -253,7 +253,7 @@ function DetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
 
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">

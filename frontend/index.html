@@ -2,13 +2,28 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SGA-CO — Sistema de Gestión de Activos" />
+    <meta name="description" content="SGA-CO. Sistema de Gestion de Activos." />
     <title>SGA-CO</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        try {
+          var theme = "light";
+          var raw = localStorage.getItem("sga-theme");
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.state && (parsed.state.theme === "dark" || parsed.state.theme === "light")) {
+              theme = parsed.state.theme;
+            }
+          } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            theme = "dark";
+          }
+          if (theme === "dark") document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

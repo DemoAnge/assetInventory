@@ -219,7 +219,7 @@ function MaintenanceForm({ record, onClose }: { record?: MaintenanceRecord; onCl
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-2xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -477,7 +477,7 @@ export default function MaintenancePage() {
         ].map((t) => (
           <button key={t.key}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === t.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              tab === t.key ? "bg-surface text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => setTab(t.key as typeof tab)}>
             {t.icon}{t.label}

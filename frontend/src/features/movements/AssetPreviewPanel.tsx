@@ -74,7 +74,7 @@ export function AssetPreviewPanel({
   return (
     <div className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
       {/* Activo principal */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white">
+      <div className="px-4 py-3 border-b border-gray-200 bg-surface">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <span className="font-mono text-primary-600 font-bold text-sm">{asset.asset_code}</span>
@@ -94,7 +94,7 @@ export function AssetPreviewPanel({
                 Cambiar estado <ChevronDown size={11} />
               </button>
               {statusMenuFor === asset.id && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[160px]">
+                <div className="absolute right-0 top-full mt-1 bg-surface border border-gray-200 rounded-lg shadow-lg z-30 min-w-[160px]">
                   {ASSET_STATUSES.map((s) => (
                     <button key={s.value} type="button"
                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
@@ -141,7 +141,7 @@ export function AssetPreviewPanel({
         <div className="space-y-2">
           {components?.map((comp) => (
             <div key={comp.id}
-              className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-3 py-2 gap-2">
+              className="flex items-center justify-between bg-surface border border-gray-100 rounded-lg px-3 py-2 gap-2">
               <div className="min-w-0">
                 <span className="font-mono text-xs text-primary-600 font-medium">{comp.asset_code}</span>
                 <span className="text-xs text-gray-600 ml-2 truncate">{comp.name}</span>
@@ -157,7 +157,7 @@ export function AssetPreviewPanel({
                     Estado <ChevronDown size={10} />
                   </button>
                   {statusMenuFor === comp.id && (
-                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[150px]">
+                    <div className="absolute right-0 top-full mt-1 bg-surface border border-gray-200 rounded-lg shadow-lg z-30 min-w-[150px]">
                       {ASSET_STATUSES.map((s) => (
                         <button key={s.value} type="button"
                           className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50"

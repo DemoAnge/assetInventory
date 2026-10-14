@@ -106,7 +106,7 @@ export function AssetSearchSelect({
       </div>
 
       {open && query.trim().length >= 2 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
           {isLoading && (
             <div className="px-3 py-2 text-sm text-gray-400">Buscando...</div>
           )}
@@ -135,7 +135,7 @@ export function AssetSearchSelect({
       )}
 
       {open && query.trim().length > 0 && query.trim().length < 2 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 text-xs text-gray-400">
+        <div className="absolute z-50 w-full mt-1 bg-surface border border-gray-200 rounded-lg shadow-sm px-3 py-2 text-xs text-gray-400">
           Escriba al menos 2 caracteres...
         </div>
       )}

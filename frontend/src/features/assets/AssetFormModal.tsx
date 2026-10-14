@@ -344,7 +344,7 @@ export function AssetFormModal({ asset, parentAsset, onClose }: Props) {
       className="fixed inset-0 bg-black/50 flex items-start justify-end z-50"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="h-full w-full max-w-2xl bg-white shadow-xl flex flex-col">
+      <div className="h-full w-full max-w-2xl bg-surface shadow-xl flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">

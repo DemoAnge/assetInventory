@@ -47,7 +47,7 @@ export function EditUserForm({ user, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg my-8 p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg my-8 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Editar usuario</h2>
           <button onClick={onClose}><X size={18} className="text-gray-400 hover:text-gray-600" /></button>

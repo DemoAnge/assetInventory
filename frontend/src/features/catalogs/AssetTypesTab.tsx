@@ -103,7 +103,7 @@ export function AssetTypesTab() {
             <div>
               <label className="text-xs text-gray-600">Categoría *</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                className="mt-0.5 w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white">
+                className="mt-0.5 w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-surface">
                 {assetCategories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
@@ -162,7 +162,7 @@ export function AssetTypesTab() {
                       </td>
                       <td className="px-4 py-2">
                         <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm bg-white w-full">
+                          className="border border-gray-300 rounded px-2 py-1 text-sm bg-surface w-full">
                           {assetCategories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
                       </td>
