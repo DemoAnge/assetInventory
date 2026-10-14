@@ -264,3 +264,110 @@ html.dark .hover\:border-blue-400:hover { border-color: rgb(126 196 224 / 0.55);
 html.dark .card {
   box-shadow: 0 10px 28px -16px rgb(0 0 0 / 0.55);
 }
+
+/* Analytics cockpit: tokens live on the element so html.dark / ThemeToggle repaint it */
+.dash-cockpit {
+  --dash-bg: rgb(var(--c-app));
+  --dash-panel: rgb(var(--c-surface));
+  --dash-panel-2: rgb(var(--c-surface-muted));
+  --dash-line: rgb(var(--c-line));
+  --dash-line-strong: rgb(var(--c-line-strong));
+  --dash-text: rgb(var(--c-ink));
+  --dash-muted: rgb(var(--c-ink-muted));
+  --dash-faint: rgb(var(--c-ink-subtle));
+  --dash-info: #0284c7;
+  --dash-ok: #0f9f8a;
+  --dash-cat: #7c3aed;
+  --dash-hot: #db2777;
+  --dash-warn: #d97706;
+  --dash-crit: #e11d48;
+  --dash-grid: rgb(var(--c-line));
+  --dash-tick: rgb(var(--c-ink-subtle));
+  --dash-tooltip-bg: rgb(var(--c-surface));
+  --dash-tooltip-border: rgb(var(--c-line));
+  --dash-chip-on-bg: rgb(2 132 199 / 0.10);
+  --dash-chip-on-line: rgb(2 132 199 / 0.40);
+  --dash-skel-a: rgb(var(--c-surface-muted));
+  --dash-skel-b: rgb(var(--c-line));
+  color: rgb(var(--c-ink));
+  background-color: rgb(var(--c-app));
+  min-height: 100%;
+}
+html.dark .dash-cockpit {
+  --dash-info: #3ec6f0;
+  --dash-ok: #2dd4bf;
+  --dash-cat: #a78bfa;
+  --dash-hot: #f472b6;
+  --dash-warn: #fbbf24;
+  --dash-crit: #fb7185;
+  --dash-chip-on-bg: rgb(62 198 240 / 0.12);
+  --dash-chip-on-line: rgb(62 198 240 / 0.45);
+  --dash-skel-b: rgb(var(--c-line-strong));
+}
+.dash-panel {
+  background: rgb(var(--c-surface));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 10px;
+  transition: border-color 0.15s ease;
+}
+.dash-panel:hover {
+  border-color: var(--dash-line-strong);
+}
+.dash-banner {
+  border: 1px solid rgb(217 119 6 / 0.35);
+  background: rgb(217 119 6 / 0.08);
+  color: var(--dash-warn);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.dash-input {
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--dash-line);
+  background: var(--dash-panel-2);
+  color: var(--dash-text);
+  padding: 0 10px;
+  font-size: 12px;
+}
+.dash-input:focus {
+  outline: none;
+  border-color: var(--dash-info);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dash-info) 35%, transparent);
+}
+.dash-input option {
+  background: var(--dash-panel);
+  color: var(--dash-text);
+}
+.dash-chip {
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--dash-line);
+  background: transparent;
+  color: var(--dash-muted);
+  padding: 0 10px;
+  font-size: 12px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.dash-chip:hover {
+  color: var(--dash-text);
+  border-color: var(--dash-line-strong);
+}
+.dash-chip-on {
+  background: var(--dash-chip-on-bg);
+  border-color: var(--dash-chip-on-line);
+  color: var(--dash-info);
+}
+.dash-skeleton {
+  background: linear-gradient(90deg, var(--dash-skel-a) 0%, var(--dash-skel-b) 50%, var(--dash-skel-a) 100%);
+  background-size: 200% 100%;
+  animation: dash-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes dash-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-skeleton { animation: none; }
+}
